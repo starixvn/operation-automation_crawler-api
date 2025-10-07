@@ -23,6 +23,9 @@ public class TournamentItem
 
     [JsonProperty("dates")]
     public string Dates { get; set; } = string.Empty;
+
+    [JsonProperty("location")]
+    public string Location { get; set; } = string.Empty;
 }
 
 public class OrderOfPlayDay

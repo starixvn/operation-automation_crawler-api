@@ -25,4 +25,7 @@ public class Tournament
 
     [JsonProperty("FormattedDate")]
     public string FormattedDate { get; set; }
+
+    [JsonProperty("Location")]
+    public string Location { get; set; }
 }

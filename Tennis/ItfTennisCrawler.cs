@@ -44,15 +44,14 @@ public class ItfTennisCrawler
     public async Task<List<League>> GetLeagues()
     {
         var rootUrl = "https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode={0}&searchString=&skip=0&take=100&nationCodes=&zoneCodes=&dateFrom={1:yyyy-MM-dd}&dateTo={2:yyyy-MM-dd}&indoorOutdoor=&categories=&isOrderAscending=true&orderField=startDate&surfaceCodes=";
-        var dateFrom = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-        var dateTo = dateFrom.AddMonths(1).AddDays(-1);
+        var dateFrom = DateTime.Today.AddDays(-7);
+        var dateTo = DateTime.Today.AddDays(7);
 
         var menLeagues = await GetLeagues(string.Format(rootUrl, "MT", dateFrom, dateTo));
         var womenLeagues = await GetLeagues(string.Format(rootUrl, "WT", dateFrom, dateTo));
-        var juniorLeagues = await GetLeagues(string.Format(rootUrl, "JT", dateFrom, dateTo));
 
         // Combine all leagues into one list
-        var allLeagues = menLeagues.Concat(womenLeagues).Concat(juniorLeagues).ToList();
+        var allLeagues = menLeagues.Concat(womenLeagues).ToList();
         return allLeagues;
     }
 
@@ -73,10 +72,11 @@ public class ItfTennisCrawler
             {
                 Name = tournament.TournamentName,
                 Id = tournament.TournamentKey,
-                Source = url,
+                Source = $"https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/{tournament.TournamentKey}/order-of-play/",
                 Date = tournament.Dates,
                 DateFrom = dateFrom,
-                DateTo = dateTo
+                DateTo = dateTo,
+                Location = tournament.Location
             };
         }).ToList();
     }
@@ -135,7 +135,7 @@ public class ItfTennisCrawler
         }
 
         var matchUrl = $"https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId={id}";
-        return await GetMatches(matchUrl, date);
+        return await GetMatches(matchUrl, date, key);
     }
 
     /// <summary>
@@ -144,7 +144,7 @@ public class ItfTennisCrawler
     /// <param name="url">Example: https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId=2581308</param>
     /// <param name="date"></param>
     /// <returns></returns>
-    private async Task<List<Match>> GetMatches(string url, DateTime date)
+    private async Task<List<Match>> GetMatches(string url, DateTime date, string key)
     {
         var response = await GetStringAndDelayAsync(url);
 
@@ -208,7 +208,7 @@ public class ItfTennisCrawler
                     Location = court.CourtName,
                     Home = homePlayers,
                     Away = awayPlayers,
-                    Source = url
+                    Source = $"https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/{key}/order-of-play/"
                 });
             }
         }

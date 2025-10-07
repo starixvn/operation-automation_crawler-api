@@ -8,6 +8,8 @@ public record League
 
     public string Name { get; init; }
 
+    public string Location { get; init; }
+
     public string Date { get; init; }
 
     public DateTime DateFrom { get; init; }

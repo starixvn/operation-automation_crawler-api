@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Tennis\Tennis.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+  </ItemGroup>
+
 </Project>

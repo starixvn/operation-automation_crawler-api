@@ -28,12 +28,13 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
                 var (dateFrom, dateTo) = ParseDateRange(tournament.FormattedDate);
                 leagues.Add(new League
                 {
-                    Source = url,
+                    Source = $"https://www.atptour.com/en/scores/current/shanghai/{tournament.Id}/daily-schedule",
                     Name = tournament.Name,
                     Id = tournament.Id,
                     Date = tournament.FormattedDate,
                     DateFrom = dateFrom,
-                    DateTo = dateTo
+                    DateTo = dateTo,
+                    Location = tournament.Location
                 });
             }
         }
@@ -49,13 +50,11 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
             throw new ArgumentException($"Invalid date range format: {value}");
         }
 
-        DateTime dateFrom, dateTo;
-
         // Try to parse end date first as it always has the year
         if (!DateTime.TryParseExact(parts[1], "d MMMM, yyyy",
                 System.Globalization.CultureInfo.InvariantCulture,
                 System.Globalization.DateTimeStyles.None,
-                out dateTo))
+                out var dateTo))
         {
             throw new ArgumentException($"Invalid end date format: {parts[1]}. Value={value}");
         }
@@ -64,7 +63,7 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         if (DateTime.TryParseExact(parts[0], "d MMMM, yyyy",
                 System.Globalization.CultureInfo.InvariantCulture,
                 System.Globalization.DateTimeStyles.None,
-                out dateFrom))
+                out var dateFrom))
         {
             return (dateFrom, dateTo);
         }
@@ -94,7 +93,7 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         // If start date is just a day, combine it with month and year from end date
         if (int.TryParse(parts[0], out int startDay))
         {
-            // If the start day is greater than the end day and they're in different months,
+            // If the start day is greater than the end day, and they're in different months,
             // we need to use the previous month
             var startMonth = dateTo.Month;
             var startYear = dateTo.Year;
@@ -146,16 +145,15 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         {
             var dateStr = matchElement.GetAttributeValue("data-matchdate", "");
             var timeStr = matchElement.GetAttributeValue("data-datetime", "");
-
-            var matchDate =
-                // Parse date and time
-                DateTime.Parse(!string.IsNullOrEmpty(timeStr) ? timeStr : dateStr);
+            var dateTimeStr=string.IsNullOrEmpty(timeStr)?dateStr: timeStr;
+            var matchDate = DateTime.Parse(dateTimeStr);
 
             // Get location
             var locationElement = matchElement.QuerySelector(".schedule-location-timestamp strong");
             var location = locationElement?.InnerText.Trim() ?? string.Empty;
 
             // Get home and away players
+
             var homeElement = matchElement.QuerySelector(".schedule-players .player");
             var awayElement = matchElement.QuerySelector(".schedule-players .opponent");
 
@@ -164,10 +162,11 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
 
             schedules.Add(new Match
             {
-                Date = matchDate,
+                Date = matchDate.AddHours(8),
                 Location = location,
                 Home = homePlayers,
-                Away = awayPlayers
+                Away = awayPlayers,
+                Source = url
             });
         }
 
@@ -188,7 +187,7 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         return new Player
         {
             Id = id,
-            Name = $"{playerResponse.FirstName} {playerResponse.LastName}",
+            Name = $"{playerResponse.FirstName} {playerResponse.LastName} ({playerResponse.NatlId})",
             BirthDay = playerResponse.BirthDate,
             Nationality = playerResponse.Nationality,
             Birthplace = playerResponse.BirthCity

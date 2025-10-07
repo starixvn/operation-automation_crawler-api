@@ -34,4 +34,7 @@ public class PlayerResponse
 
     [JsonProperty("Nationality")]
     public string Nationality { get; set; }
+
+    [JsonProperty("NatlId")]
+    public string NatlId { get; set; }
 }
