@@ -1,74 +1,153 @@
 ﻿using HtmlAgilityPack;
-using System.Globalization;
 using Fizzler.Systems.HtmlAgilityPack;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Tennis.Models;
 
 namespace Tennis;
 
-public class HandInfo
-{
-    [JsonPropertyName("Id")]
-    public string Id { get; set; }
-
-    [JsonPropertyName("Description")]
-    public string Description { get; set; }
-}
-
-public class SocialLink
-{
-    [JsonPropertyName("SocialId")]
-    public string SocialId { get; set; }
-
-    [JsonPropertyName("SocialLink")]
-    public string SocialUrl { get; set; }
-}
-
-public class PlayerResponse
-{
-    [JsonPropertyName("LastName")]
-    public string LastName { get; set; }
-
-    [JsonPropertyName("FirstName")]
-    public string FirstName { get; set; }
-
-    [JsonPropertyName("BirthCity")]
-    public string BirthCity { get; set; }
-
-    [JsonPropertyName("BirthDate")]
-    public DateTime BirthDate { get; set; }
-
-    [JsonPropertyName("Nationality")]
-    public string Nationality { get; set; }
-}
-
-public record Player
-{
-    public string Id { get; set; }
-    
-    public string Name { get; init; }
-
-    public DateTime BirthDay { get; init; }
-
-    public string Nationality { get; init; }
-
-    public string Birthplace { get; init; }
-}
-
-public record Schedule
-{
-    public DateTime Date { get; init; }
-
-    public string Location { get; init; }
-
-    public List<Player> Home { get; init; }
-
-    public List<Player> Away { get; init; }
-
-}
-
 public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
 {
+    public class HandInfo
+    {
+        [JsonProperty("Id")]
+        public string Id { get; set; }
+
+        [JsonProperty("Description")]
+        public string Description { get; set; }
+    }
+
+    public class SocialLink
+    {
+        [JsonProperty("SocialId")]
+        public string SocialId { get; set; }
+
+        [JsonProperty("SocialLink")]
+        public string SocialUrl { get; set; }
+    }
+
+    public class PlayerResponse
+    {
+        [JsonProperty("LastName")]
+        public string LastName { get; set; }
+
+        [JsonProperty("FirstName")]
+        public string FirstName { get; set; }
+
+        [JsonProperty("BirthCity")]
+        public string BirthCity { get; set; }
+
+        [JsonProperty("BirthDate")]
+        public DateTime BirthDate { get; set; }
+
+        [JsonProperty("Nationality")]
+        public string Nationality { get; set; }
+    }
+
+
     private const string HttpClientName = "AtpTour";
+
+    public class TournamentResponse
+    {
+        [JsonProperty("TournamentDates")]
+        public List<TournamentDate> TournamentDates { get; set; }
+    }
+
+    public class TournamentDate
+    {
+        [JsonProperty("DisplayDate")]
+        public string DisplayDate { get; set; }
+
+        [JsonProperty("Tournaments")]
+        public List<Tournament> Tournaments { get; set; }
+    }
+
+    public class Tournament
+    {
+        [JsonProperty("Id")]
+        public string Id { get; set; }
+
+        [JsonProperty("Name")]
+        public string Name { get; set; }
+
+        [JsonProperty("FormattedDate")]
+        public string FormattedDate { get; set; }
+    }
+
+    public async Task<List<League>> GetLeagues()
+    {
+        const string url = "https://www.atptour.com/en/-/tournaments/calendar/tour";
+        using var client = CreateHttpClient();
+
+        var response = await client.GetStringAsync(url);
+        var tournamentResponse = JsonConvert.DeserializeObject<TournamentResponse>(response);
+
+        var leagues = new List<League>();
+        foreach (var tournamentDate in tournamentResponse.TournamentDates)
+        {
+            foreach (var tournament in tournamentDate.Tournaments)
+            {
+                leagues.Add(new League
+                {
+                    Source = url,
+                    Name = tournament.Name,
+                    Id = tournament.Id,
+                    Date = tournament.FormattedDate
+                });
+            }
+        }
+
+        return leagues;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="key">5014</param>
+    /// <returns></returns>
+    public async Task<List<Match>> GetMatches(string key)
+    {
+        using var client = CreateHttpClient();
+
+        var url = $"https://www.atptour.com/en/scores/current/leaguename/{key}/daily-schedule";
+        var response = await client.GetStringAsync(url);
+        var doc = new HtmlDocument();
+        doc.LoadHtml(response);
+
+        var schedules = new List<Match>();
+        var matchElements = doc.DocumentNode.QuerySelectorAll(".content-group .schedule");
+
+
+        foreach (var matchElement in matchElements)
+        {
+            var dateStr = matchElement.GetAttributeValue("data-matchdate", "");
+            var timeStr = matchElement.GetAttributeValue("data-datetime", "");
+
+            var matchDate =
+                // Parse date and time
+                DateTime.Parse(!string.IsNullOrEmpty(timeStr) ? timeStr : dateStr);
+
+            // Get location
+            var locationElement = matchElement.QuerySelector(".schedule-location-timestamp strong");
+            var location = locationElement?.InnerText.Trim() ?? string.Empty;
+
+            // Get home and away players
+            var homeElement = matchElement.QuerySelector(".schedule-players .player");
+            var awayElement = matchElement.QuerySelector(".schedule-players .opponent");
+
+            var homePlayers = await GetPlayersFromElement(homeElement);
+            var awayPlayers = await GetPlayersFromElement(awayElement);
+
+            schedules.Add(new Match
+            {
+                Date = matchDate,
+                Location = location,
+                Home = homePlayers,
+                Away = awayPlayers
+            });
+        }
+
+        return schedules;
+    }
 
     public async Task<Player> GetPlayer(string url)
     {
@@ -79,7 +158,7 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         var apiUrl = $"https://www.atptour.com/en/-/www/players/hero/{id}?v=1";
         var response = await client.GetStringAsync(apiUrl);
         
-        var playerResponse = System.Text.Json.JsonSerializer.Deserialize<PlayerResponse>(response);
+        var playerResponse = JsonConvert.DeserializeObject<PlayerResponse>(response);
 
         return new Player
         {
@@ -104,57 +183,6 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         }
 
         return players;
-    }
-
-    public async Task<List<Schedule>> GetSchedule(string url)
-    {
-        using var client = CreateHttpClient();
-
-        var response = await client.GetStringAsync(url);
-        var doc = new HtmlDocument();
-        doc.LoadHtml(response);
-
-        var schedules = new List<Schedule>();
-        var matchElements = doc.DocumentNode.QuerySelectorAll(".content-group .schedule");
-
-
-        foreach (var matchElement in matchElements)
-        {
-            var dateStr = matchElement.GetAttributeValue("data-matchdate", "");
-            var timeStr = matchElement.GetAttributeValue("data-datetime", "");
-            DateTime matchDate;
-
-            // Parse date and time
-            if (!string.IsNullOrEmpty(timeStr))
-            {
-                matchDate = DateTime.Parse(timeStr);
-            }
-            else
-            {
-                matchDate = DateTime.Parse(dateStr);
-            }
-
-            // Get location
-            var locationElement = matchElement.QuerySelector(".schedule-location-timestamp strong");
-            var location = locationElement?.InnerText.Trim() ?? string.Empty;
-
-            // Get home and away players
-            var homeElement = matchElement.QuerySelector(".schedule-players .player");
-            var awayElement = matchElement.QuerySelector(".schedule-players .opponent");
-
-            var homePlayers = await GetPlayersFromElement(homeElement);
-            var awayPlayers = await GetPlayersFromElement(awayElement);
-
-            schedules.Add(new Schedule
-            {
-                Date = matchDate,
-                Location = location,
-                Home = homePlayers,
-                Away = awayPlayers
-            });
-        }
-
-        return schedules;
     }
 
     private HttpClient CreateHttpClient()
