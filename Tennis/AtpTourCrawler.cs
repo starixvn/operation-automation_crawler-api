@@ -2,76 +2,15 @@
 using Fizzler.Systems.HtmlAgilityPack;
 using Newtonsoft.Json;
 using Tennis.Models;
+using Tennis.Models.AptTourModels;
 
 namespace Tennis;
 
 public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
 {
-    public class HandInfo
-    {
-        [JsonProperty("Id")]
-        public string Id { get; set; }
-
-        [JsonProperty("Description")]
-        public string Description { get; set; }
-    }
-
-    public class SocialLink
-    {
-        [JsonProperty("SocialId")]
-        public string SocialId { get; set; }
-
-        [JsonProperty("SocialLink")]
-        public string SocialUrl { get; set; }
-    }
-
-    public class PlayerResponse
-    {
-        [JsonProperty("LastName")]
-        public string LastName { get; set; }
-
-        [JsonProperty("FirstName")]
-        public string FirstName { get; set; }
-
-        [JsonProperty("BirthCity")]
-        public string BirthCity { get; set; }
-
-        [JsonProperty("BirthDate")]
-        public DateTime BirthDate { get; set; }
-
-        [JsonProperty("Nationality")]
-        public string Nationality { get; set; }
-    }
-
-
     private const string HttpClientName = "AtpTour";
 
-    public class TournamentResponse
-    {
-        [JsonProperty("TournamentDates")]
-        public List<TournamentDate> TournamentDates { get; set; }
-    }
-
-    public class TournamentDate
-    {
-        [JsonProperty("DisplayDate")]
-        public string DisplayDate { get; set; }
-
-        [JsonProperty("Tournaments")]
-        public List<Tournament> Tournaments { get; set; }
-    }
-
-    public class Tournament
-    {
-        [JsonProperty("Id")]
-        public string Id { get; set; }
-
-        [JsonProperty("Name")]
-        public string Name { get; set; }
-
-        [JsonProperty("FormattedDate")]
-        public string FormattedDate { get; set; }
-    }
+    
 
     public async Task<List<League>> GetLeagues()
     {
@@ -86,18 +25,104 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         {
             foreach (var tournament in tournamentDate.Tournaments)
             {
+                var (dateFrom, dateTo) = ParseDateRange(tournament.FormattedDate);
                 leagues.Add(new League
                 {
                     Source = url,
                     Name = tournament.Name,
                     Id = tournament.Id,
-                    Date = tournament.FormattedDate
+                    Date = tournament.FormattedDate,
+                    DateFrom = dateFrom,
+                    DateTo = dateTo
                 });
             }
         }
 
         return leagues;
     }
+
+    private (DateTime dateFrom, DateTime dateTo) ParseDateRange(string value)
+    {
+        var parts = value.Split(" - ", StringSplitOptions.TrimEntries);
+        if (parts.Length != 2)
+        {
+            throw new ArgumentException($"Invalid date range format: {value}");
+        }
+
+        DateTime dateFrom, dateTo;
+
+        // Try to parse end date first as it always has the year
+        if (!DateTime.TryParseExact(parts[1], "d MMMM, yyyy",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None,
+                out dateTo))
+        {
+            throw new ArgumentException($"Invalid end date format: {parts[1]}. Value={value}");
+        }
+
+        // Try to parse start date as full date first (with year)
+        if (DateTime.TryParseExact(parts[0], "d MMMM, yyyy",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None,
+                out dateFrom))
+        {
+            return (dateFrom, dateTo);
+        }
+
+        // Try to parse start date with month but no year
+        var startDateWithYear = $"{parts[0]}, {dateTo.Year}";
+        if (DateTime.TryParseExact(startDateWithYear, "d MMMM, yyyy",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None,
+                out dateFrom))
+        {
+            // If the parsed date is after the end date, it means we need to use the previous year
+            if (dateFrom > dateTo)
+            {
+                startDateWithYear = $"{parts[0]}, {dateTo.Year - 1}";
+                if (!DateTime.TryParseExact(startDateWithYear, "d MMMM, yyyy",
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.None,
+                        out dateFrom))
+                {
+                    throw new ArgumentException($"Invalid start date format: {startDateWithYear}. Value={value}");
+                }
+            }
+            return (dateFrom, dateTo);
+        }
+
+        // If start date is just a day, combine it with month and year from end date
+        if (int.TryParse(parts[0], out int startDay))
+        {
+            // If the start day is greater than the end day and they're in different months,
+            // we need to use the previous month
+            var startMonth = dateTo.Month;
+            var startYear = dateTo.Year;
+            
+            if (startDay > dateTo.Day)
+            {
+                startMonth = dateTo.Month == 1 ? 12 : dateTo.Month - 1;
+                startYear = startMonth == 12 ? startYear - 1 : startYear;
+            }
+
+            var startDateStr = $"{startDay} {new DateTime(startYear, startMonth, 1):MMMM}, {startYear}";
+            
+            if (!DateTime.TryParseExact(startDateStr, "d MMMM, yyyy",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out dateFrom))
+            {
+                throw new ArgumentException($"Invalid start date format: {startDateStr}. Value={value}");
+            }
+        }
+        else
+        {
+            throw new ArgumentException($"Invalid start date format: {parts[0]}. Value={value}");
+        }
+
+        return (dateFrom, dateTo);
+    }
+
 
     /// <summary>
     /// 

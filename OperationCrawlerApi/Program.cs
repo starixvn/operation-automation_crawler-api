@@ -6,10 +6,12 @@ var services = builder.Services;
 // Add services to the container.
 
 services.CreateHttpClient("AtpTour");
-services.CreateHttpClient("ItfTennis");
+services.CreateTypedHttpClient<ItfTennisCrawler>("ItfTennis");
+services.CreateTypedHttpClient<UtrSportsCrawler>("UtrSports");
 
 services.AddTransient<AtpTourCrawler, AtpTourCrawler>();
 services.AddTransient<ItfTennisCrawler, ItfTennisCrawler>();
+services.AddTransient<UtrSportsCrawler>();
 services.AddControllers();
 
 var app = builder.Build();

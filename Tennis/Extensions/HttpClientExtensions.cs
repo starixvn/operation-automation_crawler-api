@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Net;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +19,25 @@ public static class HttpClientExtensions
             // Set timeout
             client.Timeout = TimeSpan.FromSeconds(timeoutSeconds ?? DefaultTimeoutSeconds);
         });
+    }
+
+    public static IHttpClientBuilder CreateTypedHttpClient<TClient>(
+        this IServiceCollection services,
+        string name,
+        int? timeoutSeconds = null) where TClient : class
+    {
+        var cookieContainer = new CookieContainer();
+        var handler = new HttpClientHandler
+        {
+            CookieContainer = cookieContainer,
+            UseCookies = true
+        };
+
+        return services.AddHttpClient<TClient>(name, client =>
+        {
+            // Set timeout
+            client.Timeout = TimeSpan.FromSeconds(timeoutSeconds ?? DefaultTimeoutSeconds);
+        }).ConfigurePrimaryHttpMessageHandler(() => handler);
     }
 
     public static async Task<string> GetAndUnzipStringAsync(this HttpClient client, string url)

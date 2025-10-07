@@ -3,59 +3,36 @@ using HtmlAgilityPack;
 using Newtonsoft.Json;
 using Tennis.Extensions;
 using Tennis.Models;
+using Tennis.Models.ItfTennisModels;
 
 namespace Tennis;
 
-
-public class ItfTennisCrawler(IHttpClientFactory httpClientFactory)
+public class ItfTennisCrawler
 {
+    private readonly HttpClient httpClient;
+    private const int DelayInSeconds = 5;
 
-    public class ItfResponse
+    public ItfTennisCrawler(HttpClient httpClient)
     {
-        [JsonProperty("courtName")]
-        public string CourtName { get; set; } = string.Empty;
-
-        [JsonProperty("matches")]
-        public List<ItfMatch> Matches { get; set; } = new();
+        this.httpClient = httpClient;
+        // Configure default headers
+        this.httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0");
+        this.httpClient.DefaultRequestHeaders.Add("Accept", "ext/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+        this.httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9,fr;q=0.8,vi;q=0.7,af;q=0.6");
+        this.httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+        this.httpClient.DefaultRequestHeaders.Add("Cookie", "_fbp=fb.1.1759725939384.572113403145088191; _gid=GA1.2.2101266261.1759725940; csrf_token=39650779-1ea8-4c89-ae42-4a3efdea8dd2; _tt_enable_cookie=1; _ttp=01K6VXJEHB05MXPS9H3C9G630Q_.tt.1; ttcsid=1759726090797::iZDZEKDbtNxXvPKtym4t.1.1759726139738.0; ttcsid_D0LHM03C77UFC0GSO0QG=1759726090797::LIcloSqCnQGF4VjfiimL.1.1759726139738.0; nlbi_178373=qEGnTnoOYS6hvm96toSRdQAAAABOGoJFcwWt/7wKj6ITcGj4; visid_incap_178373=GwhIHIUnTI+5af66AVg/fTnU5GgAAAAAQUIPAAAAAAAzB6lLdRowfoA2uShT+bG5; incap_ses_299_178373=IF4SYVxOxWcQG2t6TEMmBDzU5GgAAAAAKiFpr6NqdWBRZw+Ft14bKg==; ARRAffinity=cdf24dd0d44a5b177cc7702aae06bbdbf5f77196a1ebe37cfbdd11ebf8c8a283; ARRAffinitySameSite=cdf24dd0d44a5b177cc7702aae06bbdbf5f77196a1ebe37cfbdd11ebf8c8a283; _ga_ZRMHKRE9CL=GS2.1.s1759830202$o8$g1$t1759830317$j51$l0$h0; _ga=GA1.1.28378336.1759725940; _ga_DH6MMHJPYQ=GS2.2.s1759830203$o7$g1$t1759830317$j47$l0$h0");
+        this.httpClient.DefaultRequestHeaders.Add("Pragma", "no-cache");
+        this.httpClient.DefaultRequestHeaders.Add("Priority", "u=0, i");
+        this.httpClient.DefaultRequestHeaders.Add("Sec-CH-UA", "\"Microsoft Edge\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"");
+        this.httpClient.DefaultRequestHeaders.Add("Sec-CH-UA-Mobile", "?0");
+        this.httpClient.DefaultRequestHeaders.Add("Sec-CH-UA-Platform", "\"Windows\"");
+        this.httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "document");
+        this.httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "navigate");
+        this.httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Site", "none");
+        this.httpClient.DefaultRequestHeaders.Add("Sec-Fetch-User", "?1");
+        this.httpClient.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
+        this.httpClient.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
     }
-
-    public class ItfMatch
-    {
-        [JsonProperty("schedule")]
-        public string Schedule { get; set; } = string.Empty;
-
-        [JsonProperty("teams")]
-        public List<ItfTeam> Teams { get; set; } = new();
-    }
-
-    public class ItfTeam
-    {
-        [JsonProperty("players")]
-        public List<ItfPlayer?> Players { get; set; } = new();
-    }
-
-    public class ItfPlayer
-    {
-        [JsonProperty("playerId")]
-        public long PlayerId { get; set; }
-
-        [JsonProperty("nationality")]
-        public string Nationality { get; set; } = string.Empty;
-
-        [JsonProperty("givenName")]
-        public string GivenName { get; set; } = string.Empty;
-
-        [JsonProperty("familyName")]
-        public string FamilyName { get; set; } = string.Empty;
-
-        [JsonProperty("profileLink")]
-        public string ProfileLink { get; set; } = string.Empty;
-    }
-
-
-    private const string HttpClientName = "ItfTennis";
-
-    private const int DelayInSeconds = 1;
 
     /// <summary>
     /// https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=JT
@@ -66,13 +43,14 @@ public class ItfTennisCrawler(IHttpClientFactory httpClientFactory)
     /// <returns></returns>
     public async Task<List<League>> GetLeagues()
     {
-        var rootUrl = $"https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=";
-        var parameters = $"&dateFrom={DateTime.Today.AddDays(-14):yyyy-MM-dd}&dateTo={DateTime.Today.AddDays(14):yyyy-MM-dd}";
-        
-        var menLeagues = await GetLeagues(rootUrl + "MT" + parameters);
-        var womenLeagues = await GetLeagues(rootUrl + "WT" + parameters);
-        var juniorLeagues = await GetLeagues(rootUrl + "JT" + parameters);
-        
+        var rootUrl = "https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode={0}&searchString=&skip=0&take=100&nationCodes=&zoneCodes=&dateFrom={1:yyyy-MM-dd}&dateTo={2:yyyy-MM-dd}&indoorOutdoor=&categories=&isOrderAscending=true&orderField=startDate&surfaceCodes=";
+        var dateFrom = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var dateTo = dateFrom.AddMonths(1).AddDays(-1);
+
+        var menLeagues = await GetLeagues(string.Format(rootUrl, "MT", dateFrom, dateTo));
+        var womenLeagues = await GetLeagues(string.Format(rootUrl, "WT", dateFrom, dateTo));
+        var juniorLeagues = await GetLeagues(string.Format(rootUrl, "JT", dateFrom, dateTo));
+
         // Combine all leagues into one list
         var allLeagues = menLeagues.Concat(womenLeagues).Concat(juniorLeagues).ToList();
         return allLeagues;
@@ -80,7 +58,6 @@ public class ItfTennisCrawler(IHttpClientFactory httpClientFactory)
 
     private async Task<List<League>> GetLeagues(string url)
     {
-        using var client = CreateHttpClient();
         var response = await GetStringAndDelayAsync(url);
 
         var data = JsonConvert.DeserializeObject<TournamentResponse>(response);
@@ -89,13 +66,46 @@ public class ItfTennisCrawler(IHttpClientFactory httpClientFactory)
             return [];
         }
 
-        return data.Items.Select(tournament => new League
+        return data.Items.Select(tournament =>
         {
-            Name = tournament.TournamentName,
-            Id = tournament.TournamentKey,
-            Source = url,
-            Date = tournament.Dates
+            var (dateFrom, dateTo) = ParseDateRange(tournament.Dates);
+            return new League
+            {
+                Name = tournament.TournamentName,
+                Id = tournament.TournamentKey,
+                Source = url,
+                Date = tournament.Dates,
+                DateFrom = dateFrom,
+                DateTo = dateTo
+            };
         }).ToList();
+    }
+
+    private (DateTime dateFrom, DateTime dateTo) ParseDateRange(string value)
+    {
+        // Split the string by "to" and trim whitespace
+        var parts = value.Split("to", StringSplitOptions.TrimEntries);
+        if (parts.Length != 2)
+        {
+            throw new ArgumentException($"Invalid date range format: {value}");
+        }
+
+        // Parse the first date (e.g. "27 Oct")
+        var fromParts = parts[0].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var day1 = int.Parse(fromParts[0]);
+        var month1 = DateTime.ParseExact(fromParts[1], "MMM", System.Globalization.CultureInfo.InvariantCulture).Month;
+
+        // Parse the second date (e.g. "02 Nov 2025")
+        var toParts = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var day2 = int.Parse(toParts[0]);
+        var month2 = DateTime.ParseExact(toParts[1], "MMM", System.Globalization.CultureInfo.InvariantCulture).Month;
+        var year = int.Parse(toParts[2]);
+
+        // Create DateTime objects
+        var dateFrom = new DateTime(year, month1, day1);
+        var dateTo = new DateTime(year, month2, day2);
+
+        return (dateFrom, dateTo);
     }
 
     public async Task<List<Match>> GetMatches(List<string> keys)
@@ -136,7 +146,6 @@ public class ItfTennisCrawler(IHttpClientFactory httpClientFactory)
     /// <returns></returns>
     private async Task<List<Match>> GetMatches(string url, DateTime date)
     {
-        using var client = CreateHttpClient();
         var response = await GetStringAndDelayAsync(url);
 
         var courts = JsonConvert.DeserializeObject<List<ItfResponse>>(response);
@@ -230,7 +239,6 @@ public class ItfTennisCrawler(IHttpClientFactory httpClientFactory)
     /// <returns></returns>
     public async Task<Player> GetPlayer(string url)
     {
-        using var client = CreateHttpClient();
         var response = await GetStringAndDelayAsync(url);
 
         var doc = new HtmlDocument();
@@ -275,67 +283,11 @@ public class ItfTennisCrawler(IHttpClientFactory httpClientFactory)
         };
     }
 
-    public class TournamentResponse
+
+    private async Task<string> GetStringAndDelayAsync(string url)
     {
-        [JsonProperty("url")]
-        public string Url { get; set; } = string.Empty;
-
-        [JsonProperty("items")]
-        public List<TournamentItem> Items { get; set; } = new();
-
-        [JsonProperty("totalItems")]
-        public int TotalItems { get; set; }
-    }
-
-    public class TournamentItem
-    {
-        [JsonProperty("tournamentName")]
-        public string TournamentName { get; set; } = string.Empty;
-
-        [JsonProperty("tournamentKey")]
-        public string TournamentKey { get; set; } = string.Empty;
-
-        [JsonProperty("dates")]
-        public string Dates { get; set; } = string.Empty;
-    }
-
-    public class OrderOfPlayDay
-    {
-        [JsonProperty("orderOfPlayDayId")]
-        public long OrderOfPlayDayId { get; set; }
-
-        [JsonProperty("playDate")]
-        public DateTime PlayDate { get; set; }
-
-        [JsonProperty("playDateString")]
-        public string PlayDateString { get; set; } = string.Empty;
-    }
-
-    private async Task <string> GetStringAndDelayAsync(string url)
-    {
-        using var client = CreateHttpClient();
-        var response = await client.GetAndUnzipStringAsync(url);
+        var response = await httpClient.GetAndUnzipStringAsync(url);
         await Task.Delay(TimeSpan.FromSeconds(DelayInSeconds));
-
         return response;
-    }
-
-    private HttpClient CreateHttpClient()
-    {
-        HttpClient client = null;
-        try
-        {
-            client = httpClientFactory.CreateClient(HttpClientName);
-            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
-            client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-            client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9,fr;q=0.8,vi;q=0.7,af;q=0.6");
-            client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
-            return client;
-        }
-        catch
-        {
-            client?.Dispose();
-            throw;
-        }
     }
 }
