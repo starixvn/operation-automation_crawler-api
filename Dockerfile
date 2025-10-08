@@ -19,7 +19,9 @@ FROM hub.nexdev.net/base/dotnet/core/aspnet:9.0-alpine AS base
 
 WORKDIR /app
 COPY --from=builder /app .
-
+ENV HTTP_PROXY="http://proxysqd.nexdev.net:3128/"
+ENV HTTPS_PROXY="http://proxysqd.nexdev.net:3128/"
+ENV NO_PROXY="localhost,127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.nexdev.net"
 ENV TZ="America/La_Paz"
 ENV COMPlus_EnableDiagnostics=0
 
