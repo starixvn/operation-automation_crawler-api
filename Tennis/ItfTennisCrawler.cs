@@ -1,12 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using Tennis.Extensions;
 using Tennis.Models;
 using Tennis.Models.ItfTennisModels;
 
 namespace Tennis;
 
-public class ItfTennisCrawler(HttpClient httpClient)
+public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuration)
 {
+    private readonly CountryUtcConfig countryUtcConfig = configuration.GetSection(nameof(CountryUtcConfig)).Get<CountryUtcConfig>() ?? new CountryUtcConfig();
+
     private const int DelayInSeconds = 1;
 
     /// <summary>
@@ -18,7 +21,8 @@ public class ItfTennisCrawler(HttpClient httpClient)
     /// <returns></returns>
     public async Task<List<League>> GetLeagues()
     {
-        var rootUrl = "https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode={0}&searchString=&skip=0&take=100&nationCodes=&zoneCodes=&dateFrom={1:yyyy-MM-dd}&dateTo={2:yyyy-MM-dd}&indoorOutdoor=&categories=&isOrderAscending=true&orderField=startDate&surfaceCodes=";
+        var rootUrl =
+            "https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode={0}&searchString=&skip=0&take=100&nationCodes=&zoneCodes=&dateFrom={1:yyyy-MM-dd}&dateTo={2:yyyy-MM-dd}&indoorOutdoor=&categories=&isOrderAscending=true&orderField=startDate&surfaceCodes=";
         var dateFrom = DateTime.Today.AddDays(-7);
         var dateTo = DateTime.Today.AddDays(7);
 
@@ -47,7 +51,8 @@ public class ItfTennisCrawler(HttpClient httpClient)
             {
                 Name = tournament.TournamentName,
                 Id = tournament.TournamentKey,
-                Source = $"https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/{tournament.TournamentKey}/order-of-play/",
+                Source =
+                    $"https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/{tournament.TournamentKey}/order-of-play/",
                 Date = tournament.Dates,
                 DateFrom = dateFrom,
                 DateTo = dateTo,
@@ -191,9 +196,10 @@ public class ItfTennisCrawler(HttpClient httpClient)
                     return activeFlags.Contains(flag) ? $"{p.Name} ({p.Nationality})" : p.Name;
                 }));
 
+                var gmt8MatchTime = GetGmt8DateTime(matchTime, key);
                 schedules.Add(new Match
                 {
-                    Date = matchTime,
+                    Date = gmt8MatchTime,
                     Location = court.CourtName,
                     Home = home,
                     Away = away,
@@ -203,6 +209,35 @@ public class ItfTennisCrawler(HttpClient httpClient)
         }
 
         return schedules;
+    }
+
+    private DateTime GetGmt8DateTime(DateTime value, string key)
+    {
+        var offset = GetUtcOffsetFromKey(key);
+        var gmt8Time = value.AddHours(8 - offset);
+        return gmt8Time;
+    }
+
+    private int GetUtcOffsetFromKey(string key)
+    {
+        var countryCode = GetCountryCode(key);
+        return GetUtcOffset(countryCode);
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="key">w-itf-can-2025-006</param>
+    /// <returns></returns>
+    private string GetCountryCode(string key)
+    {
+        // Split the key by '-' and get the country code part (e.g., "w-itf-can-2025-006" -> ["w", "itf", "can", "2025", "006"])
+        var parts = key.Split('-');
+        if (parts.Length >= 3)
+        {
+            // Return the country code part in uppercase (e.g., "can" -> "CAN")
+            return parts[2].ToUpper();
+        }
+        return string.Empty;
     }
 
     /// <summary>
@@ -227,4 +262,23 @@ public class ItfTennisCrawler(HttpClient httpClient)
         await Task.Delay(TimeSpan.FromSeconds(DelayInSeconds));
         return response;
     }
+
+    private int GetUtcOffset(string countryCode)
+    {
+        // Convert to uppercase for consistency
+        countryCode = countryCode.ToUpper();
+
+        // Search through all regions for the country code
+        foreach (var region in countryUtcConfig.CountryUtcOffsets)
+        {
+            if (region.Value.TryGetValue(countryCode, out int offset))
+            {
+                return offset;
+            }
+        }
+
+        // Return UTC (0) if country code is not found
+        return 0;
+    }
+
 }
