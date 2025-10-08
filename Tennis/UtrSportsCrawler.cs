@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿/*
+using Microsoft.Extensions.Configuration;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Tennis.Models;
@@ -19,7 +20,7 @@ public class UtrSportsCrawler(IConfiguration configuration, HttpClient httpClien
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+        
 
         request.Content = JsonContent.Create(loginData);
         request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -46,7 +47,7 @@ public class UtrSportsCrawler(IConfiguration configuration, HttpClient httpClien
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+        
 
         var response = await httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
@@ -109,7 +110,7 @@ public class UtrSportsCrawler(IConfiguration configuration, HttpClient httpClien
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+        
 
         var response = await httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
@@ -125,8 +126,7 @@ public class UtrSportsCrawler(IConfiguration configuration, HttpClient httpClien
 
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));        
 
         var response = await httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
@@ -135,3 +135,5 @@ public class UtrSportsCrawler(IConfiguration configuration, HttpClient httpClien
         return result?.Matches ?? new List<UtrMatch>();
     }
 }
+
+*/

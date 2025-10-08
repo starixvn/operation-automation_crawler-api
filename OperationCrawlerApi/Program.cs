@@ -1,4 +1,5 @@
 using Microsoft.OpenApi.Models;
+
 using Tennis;
 using Tennis.Extensions;
 
@@ -8,12 +9,12 @@ var services = builder.Services;
 
 services.AddHealthChecks();
 services.CreateHttpClient("AtpTour");
-services.CreateTypedHttpClient<ItfTennisCrawler>("ItfTennis");
-services.CreateTypedHttpClient<UtrSportsCrawler>("UtrSports");
+services.CreateItfHttpClient();
+//services.CreateTypedHttpClient<UtrSportsCrawler>("UtrSports");
 
 services.AddTransient<AtpTourCrawler, AtpTourCrawler>();
 services.AddTransient<ItfTennisCrawler, ItfTennisCrawler>();
-services.AddTransient<UtrSportsCrawler>();
+//services.AddTransient<UtrSportsCrawler>();
 services.AddControllers();
 
 // Configure Swagger/OpenAPI
@@ -31,15 +32,12 @@ services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tennis Operation API v1");
-        c.RoutePrefix = string.Empty; // Serve Swagger UI at the root URL
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tennis Operation API v1");
+    c.RoutePrefix = string.Empty; // Serve Swagger UI at the root URL
+});
 
 app.MapControllers();
 app.MapHealthChecks("/healthz");

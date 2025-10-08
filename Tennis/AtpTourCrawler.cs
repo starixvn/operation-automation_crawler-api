@@ -6,17 +6,22 @@ using Tennis.Models.AptTourModels;
 
 namespace Tennis;
 
-public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
+public class AtpTourCrawler
 {
     private const string HttpClientName = "AtpTour";
 
-    
+    private static List<string> allActiveFlags = [];
+
+    private HttpClient client;
+
+    public AtpTourCrawler(IHttpClientFactory httpClientFactory)
+    {
+        client = CreateHttpClient(httpClientFactory);
+    }
 
     public async Task<List<League>> GetLeagues()
     {
         const string url = "https://www.atptour.com/en/-/tournaments/calendar/tour";
-        using var client = CreateHttpClient();
-
         var response = await client.GetStringAsync(url);
         var tournamentResponse = JsonConvert.DeserializeObject<TournamentResponse>(response);
 
@@ -97,7 +102,7 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
             // we need to use the previous month
             var startMonth = dateTo.Month;
             var startYear = dateTo.Year;
-            
+
             if (startDay > dateTo.Day)
             {
                 startMonth = dateTo.Month == 1 ? 12 : dateTo.Month - 1;
@@ -105,7 +110,7 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
             }
 
             var startDateStr = $"{startDay} {new DateTime(startYear, startMonth, 1):MMMM}, {startYear}";
-            
+
             if (!DateTime.TryParseExact(startDateStr, "d MMMM, yyyy",
                     System.Globalization.CultureInfo.InvariantCulture,
                     System.Globalization.DateTimeStyles.None,
@@ -122,17 +127,35 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         return (dateFrom, dateTo);
     }
 
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="key">5014</param>
-    /// <returns></returns>
     public async Task<List<Match>> GetMatches(string key)
     {
-        using var client = CreateHttpClient();
+        var days = await GetDaysOfLeague(key);
+        if (days.Count == 0)
+        {
+            return await GetMatches(key, string.Empty);
+        }
+        else
+        {
+            var result = new List<Match>();
+            foreach (var day in days)
+            {
+                var matches = await GetMatches(key, day);
+                result.AddRange(matches);
+            }
 
+            return result;
+        }
+    }
+
+
+    private async Task<List<Match>> GetMatches(string key, string day)
+    {
         var url = $"https://www.atptour.com/en/scores/current/leaguename/{key}/daily-schedule";
+        if (!string.IsNullOrEmpty(day))
+        {
+            url += $"?day={day}";
+        }
+
         var response = await client.GetStringAsync(url);
         var doc = new HtmlDocument();
         doc.LoadHtml(response);
@@ -145,7 +168,7 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         {
             var dateStr = matchElement.GetAttributeValue("data-matchdate", "");
             var timeStr = matchElement.GetAttributeValue("data-datetime", "");
-            var dateTimeStr=string.IsNullOrEmpty(timeStr)?dateStr: timeStr;
+            var dateTimeStr = string.IsNullOrEmpty(timeStr) ? dateStr : timeStr;
             var matchDate = DateTime.Parse(dateTimeStr);
 
             // Get location
@@ -164,8 +187,8 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
             {
                 Date = matchDate.AddHours(8),
                 Location = location,
-                Home = homePlayers,
-                Away = awayPlayers,
+                Home = string.Join(" / ", homePlayers.Select(p => p.Name)),
+                Away = string.Join(" / ", awayPlayers.Select(p => p.Name)),
                 Source = url
             });
         }
@@ -173,21 +196,34 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
         return schedules;
     }
 
-    public async Task<Player> GetPlayer(string url)
+    private async Task<List<string>> GetDaysOfLeague(string key)
+    {
+        var url = $"https://www.atptour.com/en/scores/current/leaguename/{key}/daily-schedule";
+        var response = await client.GetStringAsync(url);
+        var doc = new HtmlDocument();
+        doc.LoadHtml(response);
+
+        var dropdown = doc.DocumentNode.QuerySelector("#matchDate-filter");
+        var options = dropdown?.SelectNodes(".//option");
+        var days = options?.Select(option => option.GetAttributeValue("value", "")).ToList();
+
+        return days ?? [];
+    }
+
+    public async Task<Player> GetPlayer(string url, string country)
     {
         // Extract player ID from URL
-        var id = url.Replace("/overview","").TrimEnd('/').Split('/').Last().Split('/')[0];
+        var id = url.Replace("/overview", "").TrimEnd('/').Split('/').Last().Split('/')[0];
 
-        using var client = CreateHttpClient();
         var apiUrl = $"https://www.atptour.com/en/-/www/players/hero/{id}?v=1";
         var response = await client.GetStringAsync(apiUrl);
-        
-        var playerResponse = JsonConvert.DeserializeObject<PlayerResponse>(response);
 
+        var playerResponse = JsonConvert.DeserializeObject<PlayerResponse>(response);
+        var nation = allActiveFlags.Contains(country) ? $" ({playerResponse.NatlId})" : string.Empty;
         return new Player
         {
             Id = id,
-            Name = $"{playerResponse.FirstName} {playerResponse.LastName} ({playerResponse.NatlId})",
+            Name = $"{playerResponse.FirstName} {playerResponse.LastName}{nation}",
             BirthDay = playerResponse.BirthDate,
             Nationality = playerResponse.Nationality,
             Birthplace = playerResponse.BirthCity
@@ -197,21 +233,50 @@ public class AtpTourCrawler(IHttpClientFactory httpClientFactory)
     private async Task<List<Player>> GetPlayersFromElement(HtmlNode element)
     {
         var players = new List<Player>();
-        var playerLinks = element.QuerySelectorAll(".name a");
-        
-        foreach (var link in playerLinks)
+        var playerLinks = element.QuerySelectorAll(".name a").ToList();
+        var flagLinks = element.QuerySelectorAll(".atp-flag use").ToList();
+
+        for (var i = 0; i < playerLinks.Count; i++)
         {
+            var flagLink = flagLinks[i];
+            var flag = flagLink.GetAttributeValue("href", "/assets/atptour/assets/flags.svg#flag-invalid");
+            var country = flag.Split('#').Last();
+            var link = playerLinks[i];
             var playerUrl = "https://www.atptour.com" + link.GetAttributeValue("href", "");
-            var player = await GetPlayer(playerUrl);
+            var player = await GetPlayer(playerUrl, country);
             players.Add(player);
         }
 
         return players;
     }
 
-    private HttpClient CreateHttpClient()
+    public async Task<List<string>> GetActiveFlags()
     {
-        HttpClient client = null;
+        const string url = "https://www.atptour.com/assets/atptour/assets/flags.svg";
+        var response = await client.GetStringAsync(url);
+
+        var doc = new HtmlDocument();
+        doc.LoadHtml(response);
+
+        var symbolNodes = doc.DocumentNode.SelectNodes("//symbol");
+        var activeFlags = new List<string>();
+
+        foreach (var symbol in symbolNodes)
+        {
+            var id = symbol.GetAttributeValue("id", "");
+            if (!string.IsNullOrEmpty(id) && !id.Contains("deactive"))
+            {
+                activeFlags.Add(id);
+            }
+        }
+
+        allActiveFlags = activeFlags;
+
+        return activeFlags;
+    }
+
+    private HttpClient CreateHttpClient(IHttpClientFactory httpClientFactory)
+    {
         try
         {
             client = httpClientFactory.CreateClient(HttpClientName);

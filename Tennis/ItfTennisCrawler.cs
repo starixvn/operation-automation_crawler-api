@@ -1,38 +1,13 @@
-﻿using Fizzler.Systems.HtmlAgilityPack;
-using HtmlAgilityPack;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Tennis.Extensions;
 using Tennis.Models;
 using Tennis.Models.ItfTennisModels;
 
 namespace Tennis;
 
-public class ItfTennisCrawler
+public class ItfTennisCrawler(HttpClient httpClient)
 {
-    private readonly HttpClient httpClient;
-    private const int DelayInSeconds = 5;
-
-    public ItfTennisCrawler(HttpClient httpClient)
-    {
-        this.httpClient = httpClient;
-        // Configure default headers
-        this.httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0");
-        this.httpClient.DefaultRequestHeaders.Add("Accept", "ext/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-        this.httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9,fr;q=0.8,vi;q=0.7,af;q=0.6");
-        this.httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
-        this.httpClient.DefaultRequestHeaders.Add("Cookie", "_fbp=fb.1.1759725939384.572113403145088191; _gid=GA1.2.2101266261.1759725940; csrf_token=39650779-1ea8-4c89-ae42-4a3efdea8dd2; _tt_enable_cookie=1; _ttp=01K6VXJEHB05MXPS9H3C9G630Q_.tt.1; ttcsid=1759726090797::iZDZEKDbtNxXvPKtym4t.1.1759726139738.0; ttcsid_D0LHM03C77UFC0GSO0QG=1759726090797::LIcloSqCnQGF4VjfiimL.1.1759726139738.0; nlbi_178373=qEGnTnoOYS6hvm96toSRdQAAAABOGoJFcwWt/7wKj6ITcGj4; visid_incap_178373=GwhIHIUnTI+5af66AVg/fTnU5GgAAAAAQUIPAAAAAAAzB6lLdRowfoA2uShT+bG5; incap_ses_299_178373=IF4SYVxOxWcQG2t6TEMmBDzU5GgAAAAAKiFpr6NqdWBRZw+Ft14bKg==; ARRAffinity=cdf24dd0d44a5b177cc7702aae06bbdbf5f77196a1ebe37cfbdd11ebf8c8a283; ARRAffinitySameSite=cdf24dd0d44a5b177cc7702aae06bbdbf5f77196a1ebe37cfbdd11ebf8c8a283; _ga_ZRMHKRE9CL=GS2.1.s1759830202$o8$g1$t1759830317$j51$l0$h0; _ga=GA1.1.28378336.1759725940; _ga_DH6MMHJPYQ=GS2.2.s1759830203$o7$g1$t1759830317$j47$l0$h0");
-        this.httpClient.DefaultRequestHeaders.Add("Pragma", "no-cache");
-        this.httpClient.DefaultRequestHeaders.Add("Priority", "u=0, i");
-        this.httpClient.DefaultRequestHeaders.Add("Sec-CH-UA", "\"Microsoft Edge\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"");
-        this.httpClient.DefaultRequestHeaders.Add("Sec-CH-UA-Mobile", "?0");
-        this.httpClient.DefaultRequestHeaders.Add("Sec-CH-UA-Platform", "\"Windows\"");
-        this.httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "document");
-        this.httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "navigate");
-        this.httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Site", "none");
-        this.httpClient.DefaultRequestHeaders.Add("Sec-Fetch-User", "?1");
-        this.httpClient.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
-        this.httpClient.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
-    }
+    private const int DelayInSeconds = 1;
 
     /// <summary>
     /// https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=JT
@@ -108,12 +83,12 @@ public class ItfTennisCrawler
         return (dateFrom, dateTo);
     }
 
-    public async Task<List<Match>> GetMatches(List<string> keys)
+    public async Task<List<Match>> GetMatches(List<string> keys, List<string> activeFlags)
     {
         var result = new List<Match>();
         foreach (var key in keys)
         {
-            var matches = await GetMatches(key);
+            var matches = await GetMatches(key, activeFlags);
             result.AddRange(matches);
 
         }
@@ -125,8 +100,9 @@ public class ItfTennisCrawler
     /// 
     /// </summary>
     /// <param name="key">w-itf-usa-2025-045</param>
+    /// <param name="activeFlags"></param>
     /// <returns></returns>
-    public async Task<List<Match>> GetMatches(string key)
+    public async Task<List<Match>> GetMatches(string key, List<string> activeFlags)
     {
         var (id, date) = await GetSchedule(key);
         if (id <= 0)
@@ -135,7 +111,7 @@ public class ItfTennisCrawler
         }
 
         var matchUrl = $"https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId={id}";
-        return await GetMatches(matchUrl, date, key);
+        return await GetMatches(matchUrl, date, key, activeFlags);
     }
 
     /// <summary>
@@ -143,8 +119,10 @@ public class ItfTennisCrawler
     /// </summary>
     /// <param name="url">Example: https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId=2581308</param>
     /// <param name="date"></param>
+    /// <param name="key"></param>
+    /// <param name="activeFlags"></param>
     /// <returns></returns>
-    private async Task<List<Match>> GetMatches(string url, DateTime date, string key)
+    private async Task<List<Match>> GetMatches(string url, DateTime date, string key, List<string> activeFlags)
     {
         var response = await GetStringAndDelayAsync(url);
 
@@ -202,12 +180,23 @@ public class ItfTennisCrawler
                     })
                     .ToList();
 
+                var home = string.Join(" / ", homePlayers.Select(p =>
+                {
+                    var flag = "flag-" + p.Nationality.ToLower();
+                    return activeFlags.Contains(flag) ? $"{p.Name} ({p.Nationality})" : p.Name;
+                }));
+                var away = string.Join(" / ", awayPlayers.Select(p =>
+                {
+                    var flag = "flag-" + p.Nationality.ToLower();
+                    return activeFlags.Contains(flag) ? $"{p.Name} ({p.Nationality})" : p.Name;
+                }));
+
                 schedules.Add(new Match
                 {
                     Date = matchTime,
                     Location = court.CourtName,
-                    Home = homePlayers,
-                    Away = awayPlayers,
+                    Home = home,
+                    Away = away,
                     Source = $"https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/{key}/order-of-play/"
                 });
             }
@@ -225,64 +214,12 @@ public class ItfTennisCrawler
     {
         var url = $"https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlayDays?tournamentKey={key}";
         var response = await GetStringAndDelayAsync(url);
-        
+
         var data = JsonConvert.DeserializeObject<List<OrderOfPlayDay>>(response);
         var id = data?.FirstOrDefault()?.OrderOfPlayDayId ?? 0;
         var date = data?.FirstOrDefault()?.PlayDate ?? DateTime.Today;
         return (id, date);
     }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="url">Example: https://www.itftennis.com/en/players/gabriele-crivellaro/800590928/ita/mt/s/overview/#pprofile-info-tabs</param>
-    /// <returns></returns>
-    public async Task<Player> GetPlayer(string url)
-    {
-        var response = await GetStringAndDelayAsync(url);
-
-        var doc = new HtmlDocument();
-        doc.LoadHtml(response);
-
-        // Extract ID from URL
-        var id = url.Split('/').FirstOrDefault(s => s.All(char.IsDigit)) ?? string.Empty;
-
-        // Extract Age and Calculate Birth Year
-        var ageNode = doc.DocumentNode.QuerySelector("div.player-hero__details-item span.player-hero__value");
-        var age = ageNode != null ? int.Parse(ageNode.InnerText.Trim()) : 0;
-        var birthYear = DateTime.Now.Year - age;
-
-        // Extract data from JSON-LD
-        var jsonLdScript = doc.DocumentNode.SelectNodes("//script[@type='application/ld+json']")
-            ?.FirstOrDefault()?.InnerText;
-
-        var name = string.Empty;
-        var nationality = string.Empty;
-        var gender = "unknown";
-
-        if (!string.IsNullOrEmpty(jsonLdScript))
-        {
-            var jsonLdData = System.Text.Json.JsonDocument.Parse(jsonLdScript);
-            var root = jsonLdData.RootElement;
-
-            name = root.GetProperty("name").GetString() ?? string.Empty;
-            nationality = root.GetProperty("nationality").GetString() ?? string.Empty;
-            var genderValue = root.GetProperty("gender").GetString();
-            gender = genderValue == "M" ? "male" : (genderValue == "F" ? "female" : "unknown");
-        }
-
-        return new Player
-        {
-            Id = id,
-            Name = name,
-            BirthDay = new DateTime(birthYear, 1, 1), // Setting to January 1st since we only have the year
-            Nationality = nationality,
-            Birthplace = string.Empty,
-            Gender = gender,
-            Source = url
-        };
-    }
-
 
     private async Task<string> GetStringAndDelayAsync(string url)
     {

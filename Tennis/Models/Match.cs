@@ -6,9 +6,9 @@ public record Match
 
     public string Location { get; init; }
 
-    public List<Player> Home { get; init; }
+    public string Home { get; init; }
 
-    public List<Player> Away { get; init; }
+    public string Away { get; init; }
 
     public string Source { get; set; }
 }
