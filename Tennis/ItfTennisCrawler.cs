@@ -12,17 +12,17 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
 
     private const int DelayInSeconds = 1;
 
-    /// <summary>
-    /// https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=JT
-    /// https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=MT
-    /// https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=WT
+    /// <summary>    
+    /// https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=MT    
     /// https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=WT&take=100&dateFrom=2025-10-01&dateTo=2025-10-31
     /// </summary>
     /// <returns></returns>
     public async Task<List<League>> GetLeagues()
     {
-        var rootUrl =
-            "https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode={0}&searchString=&skip=0&take=100&nationCodes=&zoneCodes=&dateFrom={1:yyyy-MM-dd}&dateTo={2:yyyy-MM-dd}&indoorOutdoor=&categories=&isOrderAscending=true&orderField=startDate&surfaceCodes=";
+        var rootUrl = "https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode={0}"
+                      + "&searchString=&skip=0&take=100&nationCodes=&zoneCodes="
+                      + "&dateFrom={1:yyyy-MM-dd}&dateTo={2:yyyy-MM-dd}&indoorOutdoor="
+                      + "&categories=&isOrderAscending=true&orderField=startDate&surfaceCodes=";
         var dateFrom = DateTime.Today.AddDays(-7);
         var dateTo = DateTime.Today.AddDays(7);
 
@@ -51,8 +51,7 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
             {
                 Name = tournament.TournamentName,
                 Id = tournament.TournamentKey,
-                Source =
-                    $"https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/{tournament.TournamentKey}/order-of-play/",
+                Source = $"https://www.itftennis.com{tournament.TournamentLink}",
                 Date = tournament.Dates,
                 DateFrom = dateFrom,
                 DateTo = dateTo,
@@ -61,6 +60,12 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
         }).ToList();
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="value">06 Oct to 12 Oct 2025</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     private (DateTime dateFrom, DateTime dateTo) ParseDateRange(string value)
     {
         // Split the string by "to" and trim whitespace

@@ -7,7 +7,7 @@ namespace Tennis.Extensions;
 
 public static class HttpClientExtensions
 {
-    private const int DefaultTimeoutSeconds = 120;
+    private const int DefaultTimeoutSeconds = 300;
 
     public static IHttpClientBuilder CreateHttpClient(
         this IServiceCollection services,
