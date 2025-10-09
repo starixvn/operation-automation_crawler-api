@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Tennis.Models;
 
 public class CountryUtcConfig

@@ -12,12 +12,9 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
 
     private const int DelayInSeconds = 1;
 
-    /// <summary>    
-    /// Ex: https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=WT&take=100&dateFrom=2025-10-01&dateTo=2025-10-31
-    /// </summary>
-    /// <returns></returns>
     public async Task<List<League>> GetLeagues()
     {
+        // Example: Ex: https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=WT&take=100&dateFrom=2025-10-01&dateTo=2025-10-31
         var rootUrl = "https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode={0}"
                       + "&searchString=&skip=0&take=100&nationCodes=&zoneCodes="
                       + "&dateFrom={1:yyyy-MM-dd}&dateTo={2:yyyy-MM-dd}&indoorOutdoor="
@@ -175,7 +172,7 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
         return matchTime;
     }
 
-    private List<Player> MapPlayersFromTeam(List<ItfPlayer?> teamPlayers)
+    private List<Player> MapPlayersFromTeam(List<ItfPlayer> teamPlayers)
     {
         return teamPlayers
             .Where(p => p != null)

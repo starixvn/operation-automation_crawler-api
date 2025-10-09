@@ -22,7 +22,7 @@ public class ItfMatch
 public class ItfTeam
 {
     [JsonProperty("players")]
-    public List<ItfPlayer?> Players { get; set; } = [];
+    public List<ItfPlayer> Players { get; set; } = [];
 }
 
 public class ItfPlayer
