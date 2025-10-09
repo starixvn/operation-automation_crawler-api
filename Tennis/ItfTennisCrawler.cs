@@ -93,27 +93,15 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
         return (dateFrom, dateTo);
     }
 
-    public async Task<List<Match>> GetMatches(List<string> keys, List<string> activeFlags)
-    {
-        var result = new List<Match>();
-        foreach (var key in keys)
-        {
-            var matches = await GetMatches(key, activeFlags);
-            result.AddRange(matches);
-
-        }
-
-        return result;
-    }
-
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="key">w-itf-usa-2025-045</param>
+    /// <param name="leagueUrl">https://www.itftennis.com/en/tournament/w15-sharm-elsheikh/egy/2025/w-itf-egy-2025-018/</param>
     /// <param name="activeFlags"></param>
     /// <returns></returns>
-    public async Task<List<Match>> GetMatches(string key, List<string> activeFlags)
+    public async Task<List<Match>> GetMatches(string leagueUrl, List<string> activeFlags)
     {
+        var key = leagueUrl.TrimEnd('/').Split('/').LastOrDefault() ?? string.Empty;
         var (id, date) = await GetSchedule(key);
         if (id <= 0)
         {
@@ -121,20 +109,21 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
         }
 
         var matchUrl = $"https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId={id}";
-        return await GetMatches(matchUrl, date, key, activeFlags);
+        return await GetMatches(matchUrl, leagueUrl, key, date, activeFlags);
     }
 
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="url">Example: https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId=2581308</param>
-    /// <param name="date"></param>
+    /// <param name="matchUrl">https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId=2581308</param>
+    /// <param name="leagueUrl"></param>
     /// <param name="key"></param>
+    /// <param name="date"></param>
     /// <param name="activeFlags"></param>
     /// <returns></returns>
-    private async Task<List<Match>> GetMatches(string url, DateTime date, string key, List<string> activeFlags)
+    private async Task<List<Match>> GetMatches(string matchUrl, string leagueUrl, string key, DateTime date, List<string> activeFlags)
     {
-        var response = await GetStringAndDelayAsync(url);
+        var response = await GetStringAndDelayAsync(matchUrl);
 
         var courts = JsonConvert.DeserializeObject<List<ItfResponse>>(response);
         if (courts == null)
@@ -142,78 +131,72 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
             return [];
         }
 
-        var schedules = new List<Match>();
+        return courts.SelectMany(court =>
+            court.Matches.Select(match => CreateMatch(match, leagueUrl, key, court.CourtName, date, activeFlags)))
+            .ToList();
+    }
 
-        foreach (var court in courts)
+    private Match CreateMatch(ItfMatch match, string leagueUrl, string key, string courtName, DateTime date, List<string> activeFlags)
+    {
+        var matchTime = ParseMatchTime(match.Schedule, date);
+        var gmt8MatchTime = GetGmt8DateTime(matchTime, key);
+
+        var homePlayers = MapPlayersFromTeam(match.Teams[0].Players);
+        var awayPlayers = MapPlayersFromTeam(match.Teams[1].Players);
+
+        return new Match
         {
-            foreach (var match in court.Matches)
+            Date = gmt8MatchTime,
+            Location = courtName,
+            Home = FormatPlayerNames(homePlayers, activeFlags),
+            Away = FormatPlayerNames(awayPlayers, activeFlags),
+            Source = leagueUrl
+        };
+    }
+
+    private DateTime ParseMatchTime(string schedule, DateTime date)
+    {
+        var matchTime = date;
+        if (schedule.StartsWith("Starting at "))
+        {
+            var timeStr = schedule.Replace("Starting at ", "");
+            if (TimeSpan.TryParse(timeStr, out var time))
             {
-                // Parse time from schedule
-                var matchTime = date;
-                if (match.Schedule.StartsWith("Starting at "))
-                {
-                    var timeStr = match.Schedule.Replace("Starting at ", "");
-                    if (TimeSpan.TryParse(timeStr, out var time))
-                    {
-                        matchTime = date.Add(time);
-                    }
-                }
-                else if (match.Schedule.StartsWith("Not Before "))
-                {
-                    var timeStr = match.Schedule.Replace("Not Before ", "");
-                    if (TimeSpan.TryParse(timeStr, out var time))
-                    {
-                        matchTime = date.Add(time);
-                    }
-                }
-
-                // Convert players to our Player model
-                var homePlayers = match.Teams[0].Players
-                    .Where(p => p != null)
-                    .Select(p => new Player
-                    {
-                        Id = p!.PlayerId.ToString(),
-                        Name = $"{p.GivenName} {p.FamilyName}".Trim(),
-                        Nationality = p.Nationality,
-                        Source = p.ProfileLink
-                    })
-                    .ToList();
-
-                var awayPlayers = match.Teams[1].Players
-                    .Where(p => p != null)
-                    .Select(p => new Player
-                    {
-                        Id = p!.PlayerId.ToString(),
-                        Name = $"{p.GivenName} {p.FamilyName}".Trim(),
-                        Nationality = p.Nationality,
-                        Source = p.ProfileLink
-                    })
-                    .ToList();
-
-                var home = string.Join(" / ", homePlayers.Select(p =>
-                {
-                    var flag = "flag-" + p.Nationality.ToLower();
-                    return activeFlags.Contains(flag) ? $"{p.Name} ({p.Nationality})" : p.Name;
-                }));
-                var away = string.Join(" / ", awayPlayers.Select(p =>
-                {
-                    var flag = "flag-" + p.Nationality.ToLower();
-                    return activeFlags.Contains(flag) ? $"{p.Name} ({p.Nationality})" : p.Name;
-                }));
-
-                var gmt8MatchTime = GetGmt8DateTime(matchTime, key);
-                schedules.Add(new Match
-                {
-                    Date = gmt8MatchTime,
-                    Location = court.CourtName,
-                    Home = home,
-                    Away = away,
-                    Source = $"https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/{key}/order-of-play/"
-                });
+                matchTime = date.Add(time);
             }
         }
+        else if (schedule.StartsWith("Not Before "))
+        {
+            var timeStr = schedule.Replace("Not Before ", "");
+            if (TimeSpan.TryParse(timeStr, out var time))
+            {
+                matchTime = date.Add(time);
+            }
+        }
+        return matchTime;
+    }
 
-        return schedules;
+    private List<Player> MapPlayersFromTeam(List<ItfPlayer?> teamPlayers)
+    {
+        return teamPlayers
+            .Where(p => p != null)
+            .Select(p => new Player
+            {
+                Id = p!.PlayerId.ToString(),
+                Name = $"{p.GivenName} {p.FamilyName}".Trim(),
+                Nationality = p.Nationality,
+                Source = p.ProfileLink
+            })
+            .ToList();
+    }
+
+    private string FormatPlayerNames(List<Player> players, List<string> activeFlags)
+    {
+        return string.Join(" / ", players.Select(p =>
+        {
+            var flag = "flag-" + p.Nationality.ToLower();
+            return activeFlags.Contains(flag) ? $"{p.Name} ({p.Nationality})" : p.Name;
+        }));
     }
 
     private DateTime GetGmt8DateTime(DateTime value, string key)

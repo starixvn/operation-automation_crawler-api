@@ -127,19 +127,19 @@ public class AtpTourCrawler
         return (dateFrom, dateTo);
     }
 
-    public async Task<List<Match>> GetMatches(string key)
+    public async Task<List<Match>> GetMatches(string leagueUrl)
     {
-        var days = await GetDaysOfLeague(key);
+        var days = await GetDaysOfLeague(leagueUrl);
         if (days.Count == 0)
         {
-            return await GetMatches(key, string.Empty);
+            return await GetMatches(leagueUrl, string.Empty);
         }
         else
         {
             var result = new List<Match>();
             foreach (var day in days)
             {
-                var matches = await GetMatches(key, day);
+                var matches = await GetMatches(leagueUrl, day);
                 result.AddRange(matches);
             }
 
@@ -147,16 +147,14 @@ public class AtpTourCrawler
         }
     }
 
-
-    private async Task<List<Match>> GetMatches(string key, string day)
+    private async Task<List<Match>> GetMatches(string leagueUrl, string day)
     {
-        var url = $"https://www.atptour.com/en/scores/current/leaguename/{key}/daily-schedule";
         if (!string.IsNullOrEmpty(day))
         {
-            url += $"?day={day}";
+            leagueUrl += $"?day={day}";
         }
 
-        var response = await client.GetStringAsync(url);
+        var response = await client.GetStringAsync(leagueUrl);
         var doc = new HtmlDocument();
         doc.LoadHtml(response);
 
@@ -189,7 +187,7 @@ public class AtpTourCrawler
                 Location = location,
                 Home = string.Join(" / ", homePlayers.Select(p => p.Name)),
                 Away = string.Join(" / ", awayPlayers.Select(p => p.Name)),
-                Source = url
+                Source = leagueUrl
             });
         }
 

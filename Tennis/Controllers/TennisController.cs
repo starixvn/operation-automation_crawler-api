@@ -25,16 +25,16 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
 
     [HttpGet]
     [Route("atp-tour/matches")]
-    public async Task<IActionResult> AtpTourMatches(string leagues = "5014;9410")
+    public async Task<IActionResult> AtpTourMatches(string leagues = "https://www.atptour.com/en/scores/current/shanghai/5014/daily-schedule")
     {
         await atpTourCrawler.GetActiveFlags();
 
-        var keys = leagues.Split(';');
+        var leagueList = leagues.Split(';');
         var models = new List<Match>();
 
-        foreach (var key in keys)
+        foreach (var league in leagueList)
         {
-            var matches = await atpTourCrawler.GetMatches(key);
+            var matches = await atpTourCrawler.GetMatches(league);
             models.AddRange(matches);
         }
         return Ok(models);
@@ -53,15 +53,22 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
 
     /// <summary>
     /// </summary>
-    /// <param name="keys"></param>
+    /// <param name="leagues"></param>
     /// <returns></returns>
     [HttpGet]
     [Route("itf-tennis/matches")]
-    public async Task<IActionResult> ItfTennisMatches(string keys = "M-ITF-TUN-2025-045;M-ITF-BRA-2025-004")
+    public async Task<IActionResult> ItfTennisMatches(string leagues = "https://www.itftennis.com/en/tournament/m25-kigali/rwa/2025/m-itf-rwa-2025-001")
     {
         var activeFlags = await atpTourCrawler.GetActiveFlags();
-        var keyList = keys.Split(';').ToList();
-        var models = await itfTennisCrawler.GetMatches(keyList, activeFlags);
+        var leagueList = leagues.Split(';').ToList();
+        var models = new List<Match>();
+
+        foreach (var league in leagueList)
+        {
+            var matches = await itfTennisCrawler.GetMatches(league, activeFlags);
+            models.AddRange(matches);
+        }
+
         return Ok(models);
     }
 
