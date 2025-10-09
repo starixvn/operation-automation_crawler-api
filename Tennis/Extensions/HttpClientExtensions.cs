@@ -9,22 +9,8 @@ public static class HttpClientExtensions
 {
     private const int DefaultTimeoutSeconds = 300;
 
-    public static IHttpClientBuilder CreateHttpClient(
-        this IServiceCollection services,
-        string name,
-        int? timeoutSeconds = null)
-    {
-        return services.AddHttpClient(name, client =>
-        {
-            // Set timeout
-            client.Timeout = TimeSpan.FromSeconds(timeoutSeconds ?? DefaultTimeoutSeconds);
-        });
-    }
-
-    public static IHttpClientBuilder CreateTypedHttpClient<TClient>(
-        this IServiceCollection services,
-        string name,
-        int? timeoutSeconds = null) where TClient : class
+    public static IHttpClientBuilder CreateAtpTourHttpClient(
+        this IServiceCollection services)
     {
         var cookieContainer = new CookieContainer();
         var handler = new HttpClientHandler
@@ -33,16 +19,16 @@ public static class HttpClientExtensions
             UseCookies = true
         };
 
-        return services.AddHttpClient<TClient>(name, client =>
+        return services.AddHttpClient<AtpTourCrawler>("ItfTennis", client =>
         {
-            // Set timeout
-            client.Timeout = TimeSpan.FromSeconds(timeoutSeconds ?? DefaultTimeoutSeconds);
+            client.DefaultRequestHeaders.Add("Accept", "text/html");
+            client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en");
+            client.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
         }).ConfigurePrimaryHttpMessageHandler(() => handler);
     }
 
     public static IHttpClientBuilder CreateItfHttpClient(
-        this IServiceCollection services,
-        int? timeoutSeconds = null)
+        this IServiceCollection services)
     {
         var cookieContainer = new CookieContainer();
         var handler = new HttpClientHandler
@@ -68,7 +54,7 @@ public static class HttpClientExtensions
             client.DefaultRequestHeaders.Add("Sec-Fetch-User", "?1");
             client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
             client.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
-            client.Timeout = TimeSpan.FromSeconds(timeoutSeconds ?? DefaultTimeoutSeconds);
+            client.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
         }).ConfigurePrimaryHttpMessageHandler(() => handler);
     }
 
@@ -78,7 +64,7 @@ public static class HttpClientExtensions
         response.EnsureSuccessStatusCode();
 
         var content = response.Content;
-        var contentEncoding = content.Headers.ContentEncoding?.FirstOrDefault()?.ToLower();
+        var contentEncoding = content.Headers.ContentEncoding.FirstOrDefault()?.ToLower();
 
         if (string.IsNullOrEmpty(contentEncoding))
         {

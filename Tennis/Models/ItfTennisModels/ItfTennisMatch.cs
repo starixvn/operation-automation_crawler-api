@@ -7,7 +7,7 @@ public class ItfResponse
     public string CourtName { get; set; } = string.Empty;
 
     [JsonProperty("matches")]
-    public List<ItfMatch> Matches { get; set; } = new();
+    public List<ItfMatch> Matches { get; set; } = [];
 }
 
 public class ItfMatch
@@ -16,13 +16,13 @@ public class ItfMatch
     public string Schedule { get; set; } = string.Empty;
 
     [JsonProperty("teams")]
-    public List<ItfTeam> Teams { get; set; } = new();
+    public List<ItfTeam> Teams { get; set; } = [];
 }
 
 public class ItfTeam
 {
     [JsonProperty("players")]
-    public List<ItfPlayer?> Players { get; set; } = new();
+    public List<ItfPlayer?> Players { get; set; } = [];
 }
 
 public class ItfPlayer

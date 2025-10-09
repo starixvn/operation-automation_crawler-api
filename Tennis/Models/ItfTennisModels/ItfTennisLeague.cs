@@ -7,7 +7,7 @@ public class TournamentResponse
     public string Url { get; set; } = string.Empty;
 
     [JsonProperty("items")]
-    public List<TournamentItem> Items { get; set; } = new();
+    public List<TournamentItem> Items { get; set; } = [];
 
     [JsonProperty("totalItems")]
     public int TotalItems { get; set; }

@@ -13,8 +13,7 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
     private const int DelayInSeconds = 1;
 
     /// <summary>    
-    /// https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=MT    
-    /// https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=WT&take=100&dateFrom=2025-10-01&dateTo=2025-10-31
+    /// Ex: https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=WT&take=100&dateFrom=2025-10-01&dateTo=2025-10-31
     /// </summary>
     /// <returns></returns>
     public async Task<List<League>> GetLeagues()

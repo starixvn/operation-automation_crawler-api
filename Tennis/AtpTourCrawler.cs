@@ -6,18 +6,9 @@ using Tennis.Models.AptTourModels;
 
 namespace Tennis;
 
-public class AtpTourCrawler
+public class AtpTourCrawler(HttpClient client)
 {
-    private const string HttpClientName = "AtpTour";
-
     private static List<string> allActiveFlags = [];
-
-    private HttpClient client;
-
-    public AtpTourCrawler(IHttpClientFactory httpClientFactory)
-    {
-        client = CreateHttpClient(httpClientFactory);
-    }
 
     public async Task<List<League>> GetLeagues()
     {
@@ -271,21 +262,5 @@ public class AtpTourCrawler
         allActiveFlags = activeFlags;
 
         return activeFlags;
-    }
-
-    private HttpClient CreateHttpClient(IHttpClientFactory httpClientFactory)
-    {
-        try
-        {
-            client = httpClientFactory.CreateClient(HttpClientName);
-            client.DefaultRequestHeaders.Add("Accept", "text/html");
-            client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en");
-            return client;
-        }
-        catch
-        {
-            client?.Dispose();
-            throw;
-        }
     }
 }

@@ -9,7 +9,6 @@ namespace Tennis.Controllers;
 public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler itfTennisCrawler) : ControllerBase
 {
     /// <summary>
-    /// http://localhost:5000/api/Tennis/atp-tour?tourUrl=https://www.atptour.com/en/scores/current/shanghai/5014/daily-schedule
     /// </summary>
     /// <returns></returns>
     [HttpGet]
@@ -25,7 +24,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
 
     [HttpGet]
     [Route("atp-tour/matches")]
-    public async Task<IActionResult> AtpTourMatches(string leagues = "https://www.atptour.com/en/scores/current/shanghai/5014/daily-schedule")
+    public async Task<IActionResult> AtpTourMatches(string leagues = "https://www.atptour.com/en/scores/current/shanghai/5014/daily-schedule;https://www.atptour.com/en/scores/current/shanghai/9410/daily-schedule")
     {
         await atpTourCrawler.GetActiveFlags();
 
@@ -57,7 +56,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
     /// <returns></returns>
     [HttpGet]
     [Route("itf-tennis/matches")]
-    public async Task<IActionResult> ItfTennisMatches(string leagues = "https://www.itftennis.com/en/tournament/m25-kigali/rwa/2025/m-itf-rwa-2025-001")
+    public async Task<IActionResult> ItfTennisMatches(string leagues = "https://www.itftennis.com/en/tournament/m25-kigali/rwa/2025/m-itf-rwa-2025-001;https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/M-ITF-BRA-2025-004/order-of-play/")
     {
         var activeFlags = await atpTourCrawler.GetActiveFlags();
         var leagueList = leagues.Split(';').ToList();
