@@ -28,7 +28,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
     {
         await atpTourCrawler.GetActiveFlags();
 
-        var leagueList = leagues.Split(';');
+        var leagueList = leagues.Split(';').Select(l => l.TrimEnd('/')).ToList();
         var models = new List<Match>();
 
         foreach (var league in leagueList)
@@ -59,7 +59,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
     public async Task<IActionResult> ItfTennisMatches(string leagues = "https://www.itftennis.com/en/tournament/m25-kigali/rwa/2025/m-itf-rwa-2025-001;https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/M-ITF-BRA-2025-004/order-of-play/")
     {
         var activeFlags = await atpTourCrawler.GetActiveFlags();
-        var leagueList = leagues.Split(';').ToList();
+        var leagueList = leagues.Split(';').Select(l=>l.TrimEnd('/')).ToList();
         var models = new List<Match>();
 
         foreach (var league in leagueList)

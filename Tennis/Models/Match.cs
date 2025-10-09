@@ -1,14 +1,24 @@
 ﻿namespace Tennis.Models;
 
-public record Match
+public class Match
 {
-    public DateTime Date { get; init; }
+    public DateTime Date { get; set; }
 
-    public string Location { get; init; }
+    public DateTime OriginalDate { get; set; }
 
-    public string Home { get; init; }
+    public string City { get; set; }
 
-    public string Away { get; init; }
+    public string Country { get; set; } = string.Empty;
+
+    public string UtcCity { get; set; }
+
+    public int UtcOffset { get; set; } = 0;
+
+    public string Location { get; set; }
+
+    public string Home { get; set; }
+
+    public string Away { get; set; }
 
     public string Source { get; set; }
 }

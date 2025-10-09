@@ -1,4 +1,6 @@
 using Microsoft.OpenApi.Models;
+using System.Collections.Generic;
+using HtmlAgilityPack;
 
 using Tennis;
 using Tennis.Extensions;
@@ -10,6 +12,7 @@ var services = builder.Services;
 services.AddHealthChecks();
 services.CreateAtpTourHttpClient();
 services.CreateItfHttpClient();
+services.CreateTimeIsHttpClient();
 
 services.AddTransient<AtpTourCrawler, AtpTourCrawler>();
 services.AddTransient<ItfTennisCrawler, ItfTennisCrawler>();

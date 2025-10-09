@@ -174,6 +174,10 @@ public class AtpTourCrawler(HttpClient client)
 
             schedules.Add(new Match
             {
+                OriginalDate = matchDate.Date,
+                UtcOffset = 0,
+                City = "ATP Tour",
+                Country = "ATP Tour",
                 Date = matchDate.AddHours(8),
                 Location = location,
                 Home = string.Join(" / ", homePlayers.Select(p => p.Name)),

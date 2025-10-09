@@ -27,8 +27,14 @@ public class TournamentItem
     [JsonProperty("location")]
     public string Location { get; set; } = string.Empty;
 
+    [JsonProperty("hostNation")]
+    public string HostNation { get; set; } = string.Empty;
+
     [JsonProperty("tournamentLink")]
     public string TournamentLink { get; set; } = string.Empty;
+
+    [JsonProperty("tourStatusDesc")]
+    public string TourStatusDesc { get; set; } = string.Empty;
 }
 
 public class OrderOfPlayDay

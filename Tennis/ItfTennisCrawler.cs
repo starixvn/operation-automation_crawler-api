@@ -1,16 +1,15 @@
-﻿using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Tennis.Extensions;
 using Tennis.Models;
 using Tennis.Models.ItfTennisModels;
 
 namespace Tennis;
 
-public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuration)
+public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient)
 {
-    private readonly CountryUtcConfig countryUtcConfig = configuration.GetSection(nameof(CountryUtcConfig)).Get<CountryUtcConfig>() ?? new CountryUtcConfig();
-
     private const int DelayInSeconds = 1;
+
+    private static Dictionary<string, League> LeagueCache = new();
 
     public async Task<List<League>> GetLeagues()
     {
@@ -40,7 +39,9 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
             return [];
         }
 
-        return data.Items.Select(tournament =>
+        var leagues= data.Items
+            .Where(i => i.TourStatusDesc != "CANCELLED")
+            .Select(tournament =>
         {
             var (dateFrom, dateTo) = ParseDateRange(tournament.Dates);
             return new League
@@ -51,9 +52,13 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
                 Date = tournament.Dates,
                 DateFrom = dateFrom,
                 DateTo = dateTo,
-                Location = tournament.Location
+                Location = tournament.Location,
+                Country = tournament.HostNation
             };
         }).ToList();
+
+        leagues.ForEach(l => { LeagueCache.TryAdd(l.Source.TrimEnd('/'), l); });
+        return leagues;
     }
 
     /// <summary>
@@ -105,7 +110,7 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
         }
 
         var matchUrl = $"https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId={id}";
-        return await GetMatches(matchUrl, leagueUrl, key, date, activeFlags);
+        return await GetMatches(matchUrl, leagueUrl, date, activeFlags);
     }
 
     /// <summary>
@@ -113,11 +118,10 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
     /// </summary>
     /// <param name="matchUrl">https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId=2581308</param>
     /// <param name="leagueUrl"></param>
-    /// <param name="key"></param>
     /// <param name="date"></param>
     /// <param name="activeFlags"></param>
     /// <returns></returns>
-    private async Task<List<Match>> GetMatches(string matchUrl, string leagueUrl, string key, DateTime date, List<string> activeFlags)
+    private async Task<List<Match>> GetMatches(string matchUrl, string leagueUrl, DateTime date, List<string> activeFlags)
     {
         var response = await GetStringAndDelayAsync(matchUrl);
 
@@ -127,27 +131,52 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
             return [];
         }
 
-        return courts.SelectMany(court =>
-            court.Matches.Select(match => CreateMatch(match, leagueUrl, key, court.CourtName, date, activeFlags)))
-            .ToList();
+        var matches = new List<Match>();
+
+        foreach (var court in courts)
+        {
+            foreach (var m in court.Matches)
+            {
+                var match = await CreateMatch(m, leagueUrl, court.CourtName, date, activeFlags);
+                matches.Add(match);
+            }
+        }
+
+        return matches;
     }
 
-    private Match CreateMatch(ItfMatch match, string leagueUrl, string key, string courtName, DateTime date, List<string> activeFlags)
+    private async Task<Match> CreateMatch(ItfMatch match, string leagueUrl, string courtName, DateTime date, List<string> activeFlags)
     {
         var matchTime = ParseMatchTime(match.Schedule, date);
-        var gmt8MatchTime = GetGmt8DateTime(matchTime, key);
-
+        
         var homePlayers = MapPlayersFromTeam(match.Teams[0].Players);
         var awayPlayers = MapPlayersFromTeam(match.Teams[1].Players);
 
-        return new Match
+        var result= new Match
         {
-            Date = gmt8MatchTime,
+            OriginalDate = matchTime,
+            Date = matchTime,
             Location = courtName,
             Home = FormatPlayerNames(homePlayers, activeFlags),
             Away = FormatPlayerNames(awayPlayers, activeFlags),
             Source = leagueUrl
         };
+
+        if (LeagueCache.TryGetValue(leagueUrl, out var league))
+        {
+            var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.Location);
+            result.Country = league.Country;
+            result.City = league.Location;
+
+            if (timeIsModel != null)
+            {
+                result.UtcOffset = timeIsModel.UtcOffset;
+                result.Date = matchTime.AddHours(-result.UtcOffset + 8);
+                result.UtcCity = timeIsModel.Location;
+            }
+        }
+
+        return result;
     }
 
     private DateTime ParseMatchTime(string schedule, DateTime date)
@@ -195,35 +224,6 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
         }));
     }
 
-    private DateTime GetGmt8DateTime(DateTime value, string key)
-    {
-        var offset = GetUtcOffsetFromKey(key);
-        var gmt8Time = value.AddHours(8 - offset);
-        return gmt8Time;
-    }
-
-    private int GetUtcOffsetFromKey(string key)
-    {
-        var countryCode = GetCountryCode(key);
-        return GetUtcOffset(countryCode);
-    }
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="key">w-itf-can-2025-006</param>
-    /// <returns></returns>
-    private string GetCountryCode(string key)
-    {
-        // Split the key by '-' and get the country code part (e.g., "w-itf-can-2025-006" -> ["w", "itf", "can", "2025", "006"])
-        var parts = key.Split('-');
-        if (parts.Length >= 3)
-        {
-            // Return the country code part in uppercase (e.g., "can" -> "CAN")
-            return parts[2].ToUpper();
-        }
-        return string.Empty;
-    }
-
     /// <summary>
     /// 
     /// </summary>
@@ -246,23 +246,4 @@ public class ItfTennisCrawler(HttpClient httpClient, IConfiguration configuratio
         await Task.Delay(TimeSpan.FromSeconds(DelayInSeconds));
         return response;
     }
-
-    private int GetUtcOffset(string countryCode)
-    {
-        // Convert to uppercase for consistency
-        countryCode = countryCode.ToUpper();
-
-        // Search through all regions for the country code
-        foreach (var region in countryUtcConfig.CountryUtcOffsets)
-        {
-            if (region.Value.TryGetValue(countryCode, out int offset))
-            {
-                return offset;
-            }
-        }
-
-        // Return UTC (0) if country code is not found
-        return 0;
-    }
-
 }
