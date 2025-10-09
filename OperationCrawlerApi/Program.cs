@@ -10,11 +10,9 @@ var services = builder.Services;
 services.AddHealthChecks();
 services.CreateHttpClient("AtpTour");
 services.CreateItfHttpClient();
-//services.CreateTypedHttpClient<UtrSportsCrawler>("UtrSports");
 
 services.AddTransient<AtpTourCrawler, AtpTourCrawler>();
 services.AddTransient<ItfTennisCrawler, ItfTennisCrawler>();
-//services.AddTransient<UtrSportsCrawler>();
 services.AddControllers();
 
 // Configure Swagger/OpenAPI
