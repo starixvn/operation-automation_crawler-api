@@ -1,7 +1,5 @@
 ﻿using System.Net;
-using System.Runtime.CompilerServices;
 using HtmlAgilityPack;
-using Tennis.Extensions;
 
 namespace Tennis;
 

@@ -3,12 +3,14 @@ using Fizzler.Systems.HtmlAgilityPack;
 using Newtonsoft.Json;
 using Tennis.Models;
 using Tennis.Models.AptTourModels;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Tennis;
 
-public class AtpTourCrawler(HttpClient client)
+public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
 {
-    private static List<string> allActiveFlags = [];
+    private const string ACTIVE_FLAGS_CACHE_KEY = "ActiveFlags";
+    private readonly IMemoryCache _memoryCache = memoryCache;
 
     public async Task<List<League>> GetLeagues()
     {
@@ -212,7 +214,8 @@ public class AtpTourCrawler(HttpClient client)
         var response = await client.GetStringAsync(apiUrl);
 
         var playerResponse = JsonConvert.DeserializeObject<PlayerResponse>(response);
-        var nation = allActiveFlags.Contains(country) ? $" ({playerResponse.NatlId})" : string.Empty;
+        var activeFlags = await GetActiveFlags();
+        var nation = activeFlags.Contains(country) ? $" ({playerResponse.NatlId})" : string.Empty;
         return new Player
         {
             Id = id,
@@ -245,9 +248,9 @@ public class AtpTourCrawler(HttpClient client)
 
     public async Task<List<string>> GetActiveFlags()
     {
-        if (allActiveFlags.Count > 0)
+        if (_memoryCache.TryGetValue(ACTIVE_FLAGS_CACHE_KEY, out List<string> cachedFlags))
         {
-            return allActiveFlags;
+            return cachedFlags;
         }
 
         const string url = "https://www.atptour.com/assets/atptour/assets/flags.svg";
@@ -268,7 +271,10 @@ public class AtpTourCrawler(HttpClient client)
             }
         }
 
-        allActiveFlags = activeFlags;
+        var cacheOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(TimeSpan.FromDays(1));
+
+        _memoryCache.Set(ACTIVE_FLAGS_CACHE_KEY, activeFlags, cacheOptions);
 
         return activeFlags;
     }

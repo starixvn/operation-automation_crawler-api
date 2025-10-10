@@ -1,7 +1,5 @@
 using Microsoft.OpenApi.Models;
-using System.Collections.Generic;
-using HtmlAgilityPack;
-
+using Microsoft.Extensions.Caching.Memory;
 using Tennis;
 using Tennis.Extensions;
 
@@ -14,8 +12,11 @@ services.CreateAtpTourHttpClient();
 services.CreateItfHttpClient();
 services.CreateTimeIsHttpClient();
 
-services.AddTransient<AtpTourCrawler, AtpTourCrawler>();
-services.AddTransient<ItfTennisCrawler, ItfTennisCrawler>();
+// Register memory cache
+services.AddMemoryCache();
+
+services.AddScoped<AtpTourCrawler>();
+services.AddScoped<ItfTennisCrawler>();
 services.AddControllers();
 
 // Configure Swagger/OpenAPI

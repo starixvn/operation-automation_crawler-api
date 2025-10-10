@@ -2,14 +2,14 @@
 using Tennis.Extensions;
 using Tennis.Models;
 using Tennis.Models.ItfTennisModels;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Tennis;
 
-public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient)
+public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient, IMemoryCache memoryCache)
 {
     private const int DelayInSeconds = 1;
-
-    private static Dictionary<string, League> LeagueCache = new();
+    private const string CacheKeyPrefix = "ItfTennisLeague_";
 
     public async Task<List<League>> GetLeagues()
     {
@@ -57,7 +57,13 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
             };
         }).ToList();
 
-        leagues.ForEach(l => { LeagueCache.TryAdd(l.Source.TrimEnd('/'), l); });
+        leagues.ForEach(l => 
+        { 
+            var cacheKey = CacheKeyPrefix + l.Source.TrimEnd('/');
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromDays(7));
+            memoryCache.Set(cacheKey, l, cacheOptions);
+        });
         return leagues;
     }
 
@@ -162,7 +168,8 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
             Source = leagueUrl
         };
 
-        if (LeagueCache.TryGetValue(leagueUrl, out var league))
+        var cacheKey = CacheKeyPrefix + leagueUrl;
+        if (memoryCache.TryGetValue(cacheKey, out League? league) && league != null)
         {
             var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.Location);
             result.Country = league.Country;
