@@ -78,32 +78,4 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
         }
       
     }
-
-    //[HttpGet]
-    //[Route("utr-sports/leagues")]
-    //public async Task<IActionResult> UtrSportsLeagues()
-    //{
-    //    await utrSportsCrawler.Login();
-    //    var models = await utrSportsCrawler.GetAllLeagues();
-    //    models = models.Where(m => m.DateFrom <= DateTime.Today.AddDays(10))
-    //        .Where(m => m.DateTo >= DateTime.Today.AddDays(-1))
-    //        .ToList();
-    //    return Ok(models);
-    //}
-
-    //[HttpGet]
-    //[Route("utr-sports/matches")]
-    //public async Task<IActionResult> UtrSportsMatches(string leagues = "303253;315527")
-    //{
-    //    await utrSportsCrawler.Login();
-    //    var leagueIds = leagues.Split(';').Select(long.Parse).ToList();
-    //    var models = new List<Match>();
-    //    foreach (var id in leagueIds)
-    //    {
-    //        var matches = await utrSportsCrawler.GetAllMatches(id);
-    //        models.AddRange(matches);
-    //    }
-
-    //    return Ok(models);
-    //}
 }
