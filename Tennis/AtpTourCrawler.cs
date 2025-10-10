@@ -4,13 +4,14 @@ using Newtonsoft.Json;
 using Tennis.Models;
 using Tennis.Models.AptTourModels;
 using Microsoft.Extensions.Caching.Memory;
+using Tennis.Extensions;
 
 namespace Tennis;
 
 public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
 {
-    private const string ACTIVE_FLAGS_CACHE_KEY = "ActiveFlags";
-    private readonly IMemoryCache _memoryCache = memoryCache;
+    private const string ActiveFlagsCacheKey = "ActiveFlags";
+    private readonly IMemoryCache memoryCache = memoryCache;
 
     public async Task<List<League>> GetLeagues()
     {
@@ -23,7 +24,7 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
         {
             foreach (var tournament in tournamentDate.Tournaments)
             {
-                var (dateFrom, dateTo) = ParseDateRange(tournament.FormattedDate);
+                var (dateFrom, dateTo) = DateTimeExtensions.ParseAtpTourDateRange(tournament.FormattedDate);
                 leagues.Add(new League
                 {
                     Source = $"https://www.atptour.com/en/scores/current/shanghai/{tournament.Id}/daily-schedule",
@@ -40,85 +41,6 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
         return leagues;
     }
 
-    private (DateTime dateFrom, DateTime dateTo) ParseDateRange(string value)
-    {
-        var parts = value.Split(" - ", StringSplitOptions.TrimEntries);
-        if (parts.Length != 2)
-        {
-            throw new ArgumentException($"Invalid date range format: {value}");
-        }
-
-        // Try to parse end date first as it always has the year
-        if (!DateTime.TryParseExact(parts[1], "d MMMM, yyyy",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None,
-                out var dateTo))
-        {
-            throw new ArgumentException($"Invalid end date format: {parts[1]}. Value={value}");
-        }
-
-        // Try to parse start date as full date first (with year)
-        if (DateTime.TryParseExact(parts[0], "d MMMM, yyyy",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None,
-                out var dateFrom))
-        {
-            return (dateFrom, dateTo);
-        }
-
-        // Try to parse start date with month but no year
-        var startDateWithYear = $"{parts[0]}, {dateTo.Year}";
-        if (DateTime.TryParseExact(startDateWithYear, "d MMMM, yyyy",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None,
-                out dateFrom))
-        {
-            // If the parsed date is after the end date, it means we need to use the previous year
-            if (dateFrom > dateTo)
-            {
-                startDateWithYear = $"{parts[0]}, {dateTo.Year - 1}";
-                if (!DateTime.TryParseExact(startDateWithYear, "d MMMM, yyyy",
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        System.Globalization.DateTimeStyles.None,
-                        out dateFrom))
-                {
-                    throw new ArgumentException($"Invalid start date format: {startDateWithYear}. Value={value}");
-                }
-            }
-            return (dateFrom, dateTo);
-        }
-
-        // If start date is just a day, combine it with month and year from end date
-        if (int.TryParse(parts[0], out int startDay))
-        {
-            // If the start day is greater than the end day, and they're in different months,
-            // we need to use the previous month
-            var startMonth = dateTo.Month;
-            var startYear = dateTo.Year;
-
-            if (startDay > dateTo.Day)
-            {
-                startMonth = dateTo.Month == 1 ? 12 : dateTo.Month - 1;
-                startYear = startMonth == 12 ? startYear - 1 : startYear;
-            }
-
-            var startDateStr = $"{startDay} {new DateTime(startYear, startMonth, 1):MMMM}, {startYear}";
-
-            if (!DateTime.TryParseExact(startDateStr, "d MMMM, yyyy",
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.None,
-                    out dateFrom))
-            {
-                throw new ArgumentException($"Invalid start date format: {startDateStr}. Value={value}");
-            }
-        }
-        else
-        {
-            throw new ArgumentException($"Invalid start date format: {parts[0]}. Value={value}");
-        }
-
-        return (dateFrom, dateTo);
-    }
 
     public async Task<List<Match>> GetMatches(string leagueUrl)
     {
@@ -217,13 +139,19 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
         // Extract player ID from URL
         var id = url.Replace("/overview", "").TrimEnd('/').Split('/').Last().Split('/')[0];
 
+        // Try to get player from cache
+        if (memoryCache.TryGetValue(id, out Player cachedPlayer))
+        {
+            return cachedPlayer;
+        }
+
         var apiUrl = $"https://www.atptour.com/en/-/www/players/hero/{id}?v=1";
         var response = await client.GetStringAsync(apiUrl);
 
         var playerResponse = JsonConvert.DeserializeObject<PlayerResponse>(response);
         var activeFlags = await GetActiveFlags();
         var nation = activeFlags.Contains(country) ? $" ({playerResponse.NatlId})" : string.Empty;
-        return new Player
+        var player = new Player
         {
             Id = id,
             Name = $"{playerResponse.FirstName} {playerResponse.LastName}{nation}",
@@ -231,6 +159,14 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
             Nationality = playerResponse.Nationality,
             Birthplace = playerResponse.BirthCity
         };
+
+        // Cache the player data for 30 days
+        var cacheOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(TimeSpan.FromDays(30));
+
+        memoryCache.Set(id, player, cacheOptions);
+
+        return player;
     }
 
     private async Task<List<Player>> GetPlayersFromElement(HtmlNode element)
@@ -255,7 +191,7 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
 
     public async Task<List<string>> GetActiveFlags()
     {
-        if (_memoryCache.TryGetValue(ACTIVE_FLAGS_CACHE_KEY, out List<string> cachedFlags))
+        if (memoryCache.TryGetValue(ActiveFlagsCacheKey, out List<string> cachedFlags))
         {
             return cachedFlags;
         }
@@ -281,7 +217,7 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
         var cacheOptions = new MemoryCacheEntryOptions()
             .SetAbsoluteExpiration(TimeSpan.FromDays(1));
 
-        _memoryCache.Set(ACTIVE_FLAGS_CACHE_KEY, activeFlags, cacheOptions);
+        memoryCache.Set(ActiveFlagsCacheKey, activeFlags, cacheOptions);
 
         return activeFlags;
     }

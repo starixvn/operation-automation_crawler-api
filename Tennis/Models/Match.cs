@@ -1,11 +1,7 @@
 ﻿namespace Tennis.Models;
 
-public class Match
+public class Match(string id)
 {
-    public Match(string id)
-    {
-        Id = id;
-    }
     public DateTime Date { get; set; }
 
     public DateTime OriginalDate { get; set; }
@@ -26,7 +22,7 @@ public class Match
 
     public string Source { get; set; }
 
-    public string Id { get; }
+    public string Id { get; } = id;
 
     public override bool Equals(object obj)
     {

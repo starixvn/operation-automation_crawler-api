@@ -41,21 +41,14 @@ public class TimeIsCrawler(HttpClient httpClient)
 
             // Get UTC offset
             var utcOffsetNode = doc.DocumentNode.SelectSingleNode("//div[@class='current_UTC_offset']");
-            if (utcOffsetNode == null)
-            {
-                return null;
-            }
+            
 
             var utcOffsetText = utcOffsetNode.InnerText.Trim(); // "UTC +8" or "UTC -8"
             var utcOffset = ParseUtcOffset(utcOffsetText);
 
             // Get location
             var locationNode = doc.DocumentNode.SelectSingleNode("//div[@id='msgdiv']");
-            if (locationNode == null)
-            {
-                return null;
-            }
-
+            
             var locationText = locationNode.InnerText.Trim();
             locationText = locationText.Replace("Time in ", "").Replace("&nbsp;"," ").Trim();
             if (locationText.EndsWith(" now"))

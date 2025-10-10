@@ -22,4 +22,9 @@ public record League
     {
         return other != null && Source == other.Source;
     }
+
+    public override int GetHashCode()
+    {
+        return Source.GetHashCode();
+    }
 }

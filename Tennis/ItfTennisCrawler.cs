@@ -42,7 +42,7 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
             .Where(i => i.TourStatusDesc != "CANCELLED")
             .Select(tournament =>
         {
-            var (dateFrom, dateTo) = ParseDateRange(tournament.Dates);
+            var (dateFrom, dateTo) = DateTimeExtensions.ParseItfDateRange(tournament.Dates);
             return new League
             {
                 Name = tournament.TournamentName,
@@ -64,39 +64,6 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
             memoryCache.Set(cacheKey, l, cacheOptions);
         });
         return leagues;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="value">06 Oct to 12 Oct 2025</param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentException"></exception>
-    private (DateTime dateFrom, DateTime dateTo) ParseDateRange(string value)
-    {
-        // Split the string by "to" and trim whitespace
-        var parts = value.Split("to", StringSplitOptions.TrimEntries);
-        if (parts.Length != 2)
-        {
-            throw new ArgumentException($"Invalid date range format: {value}");
-        }
-
-        // Parse the first date (e.g. "27 Oct")
-        var fromParts = parts[0].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var day1 = int.Parse(fromParts[0]);
-        var month1 = DateTime.ParseExact(fromParts[1], "MMM", System.Globalization.CultureInfo.InvariantCulture).Month;
-
-        // Parse the second date (e.g. "02 Nov 2025")
-        var toParts = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var day2 = int.Parse(toParts[0]);
-        var month2 = DateTime.ParseExact(toParts[1], "MMM", System.Globalization.CultureInfo.InvariantCulture).Month;
-        var year = int.Parse(toParts[2]);
-
-        // Create DateTime objects
-        var dateFrom = new DateTime(year, month1, day1);
-        var dateTo = new DateTime(year, month2, day2);
-
-        return (dateFrom, dateTo);
     }
 
     /// <summary>
