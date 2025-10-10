@@ -19,7 +19,7 @@ public static class HttpClientExtensions
             UseCookies = true
         };
 
-        return services.AddHttpClient<AtpTourCrawler>("ItfTennis", client =>
+        return services.AddHttpClient<AtpTourCrawler>(client =>
         {
             client.DefaultRequestHeaders.Add("Accept", "text/html");
             client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en");
@@ -37,7 +37,7 @@ public static class HttpClientExtensions
             UseCookies = true
         };
 
-        return services.AddHttpClient<ItfTennisCrawler>("ItfTennis", client =>
+        return services.AddHttpClient<ItfTennisCrawler>(client =>
         {
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0");
             client.DefaultRequestHeaders.Add("Accept", "ext/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
@@ -68,7 +68,7 @@ public static class HttpClientExtensions
             UseCookies = true
         };
 
-        return services.AddHttpClient<TimeIsCrawler>("TimeIs", client =>
+        return services.AddHttpClient<TimeIsCrawler>(client =>
         {
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0");
             client.DefaultRequestHeaders.Add("Accept", "ext/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");

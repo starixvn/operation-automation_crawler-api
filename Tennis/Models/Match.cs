@@ -2,6 +2,10 @@
 
 public class Match
 {
+    public Match(string id)
+    {
+        Id = id;
+    }
     public DateTime Date { get; set; }
 
     public DateTime OriginalDate { get; set; }
@@ -12,7 +16,7 @@ public class Match
 
     public string UtcCity { get; set; }
 
-    public int UtcOffset { get; set; } = 0;
+    public double UtcOffset { get; set; } = 0;
 
     public string Location { get; set; }
 
@@ -21,4 +25,20 @@ public class Match
     public string Away { get; set; }
 
     public string Source { get; set; }
+
+    public string Id { get; }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is Match other)
+        {
+            return Id == other.Id;
+        }
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return Id.GetHashCode();
+    }
 }

@@ -7,7 +7,7 @@ public class TimeIsCrawler(HttpClient httpClient)
 {
     public record TimeIsModel
     {
-        public int UtcOffset { get; init; }
+        public double UtcOffset { get; init; }
 
         public string Location { get; init; }        
     }
@@ -47,7 +47,7 @@ public class TimeIsCrawler(HttpClient httpClient)
             }
 
             var utcOffsetText = utcOffsetNode.InnerText.Trim(); // "UTC +8" or "UTC -8"
-            var utcOffset = int.Parse(utcOffsetText.Replace("UTC ", ""));
+            var utcOffset = ParseUtcOffset(utcOffsetText);
 
             // Get location
             var locationNode = doc.DocumentNode.SelectSingleNode("//div[@id='msgdiv']");
@@ -76,6 +76,19 @@ public class TimeIsCrawler(HttpClient httpClient)
         {
             return null;
         }
+    }
+
+    private static double ParseUtcOffset(string utcOffsetText)
+    {
+        var offset = utcOffsetText.Replace("UTC ", "").Trim();
+        if (offset.Contains(":"))
+        {
+            var parts = offset.Split(':');
+            var hours = double.Parse(parts[0]);
+            var minutes = double.Parse(parts[1]);
+            return hours + (minutes / 60.0);
+        }
+        return double.Parse(offset);
     }
 
 }

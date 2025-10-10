@@ -12,6 +12,10 @@ public class ItfResponse
 
 public class ItfMatch
 {
+    [JsonProperty("matchId")]
+    public string MatchId { get; set; } = string.Empty;
+
+
     [JsonProperty("schedule")]
     public string Schedule { get; set; } = string.Empty;
 

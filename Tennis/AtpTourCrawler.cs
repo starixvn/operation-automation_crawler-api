@@ -166,6 +166,11 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
             var locationElement = matchElement.QuerySelector(".schedule-location-timestamp strong");
             var location = locationElement?.InnerText.Trim() ?? string.Empty;
 
+            if (locationElement == null)
+            {
+                continue;
+            }
+
             // Get home and away players
 
             var homeElement = matchElement.QuerySelector(".schedule-players .player");
@@ -174,7 +179,9 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
             var homePlayers = await GetPlayersFromElement(homeElement);
             var awayPlayers = await GetPlayersFromElement(awayElement);
 
-            schedules.Add(new Match
+            var matchId = $"{dateTimeStr}-{string.Join('-', homePlayers.Select(p => p.Id))}"
+                          + $"-{string.Join('-', awayPlayers.Select(p => p.Id))}";
+            schedules.Add(new Match(matchId)
             {
                 OriginalDate = matchDate.Date,
                 UtcOffset = 0,

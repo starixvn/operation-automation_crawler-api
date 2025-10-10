@@ -39,6 +39,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
         }
 
         models = models.Where(m => !string.IsNullOrEmpty(m.Home) && !string.IsNullOrEmpty(m.Away))
+            .Distinct()
             .ToList();
         return Ok(models);
     }
@@ -76,7 +77,9 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
             }
 
             models = models.Where(m => !string.IsNullOrEmpty(m.Home) && !string.IsNullOrEmpty(m.Away))
+                .Distinct()
                 .ToList();
+            
             return Ok(models);
         }
         catch (Exception e)

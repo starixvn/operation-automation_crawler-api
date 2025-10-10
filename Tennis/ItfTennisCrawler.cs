@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Tennis.Extensions;
+﻿using Tennis.Extensions;
 using Tennis.Models;
 using Tennis.Models.ItfTennisModels;
 using Microsoft.Extensions.Caching.Memory;
@@ -33,8 +32,8 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
     {
         var response = await GetStringAndDelayAsync(url);
 
-        var data = JsonConvert.DeserializeObject<TournamentResponse>(response);
-        if (data?.Items == null)
+        var data = JsonExtensions.TryDeserializeObject<TournamentResponse>(response);
+        if (data.Items == null)
         {
             return [];
         }
@@ -131,11 +130,7 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
     {
         var response = await GetStringAndDelayAsync(matchUrl);
 
-        var courts = JsonConvert.DeserializeObject<List<ItfResponse>>(response);
-        if (courts == null)
-        {
-            return [];
-        }
+        var courts = JsonExtensions.TryDeserializeObject<List<ItfResponse>>(response);
 
         var matches = new List<Match>();
 
@@ -158,7 +153,7 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
         var homePlayers = MapPlayersFromTeam(match.Teams[0].Players);
         var awayPlayers = MapPlayersFromTeam(match.Teams[1].Players);
 
-        var result= new Match
+        var result= new Match(match.MatchId)
         {
             OriginalDate = matchTime,
             Date = matchTime,
@@ -169,7 +164,7 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
         };
 
         var cacheKey = CacheKeyPrefix + leagueUrl;
-        if (memoryCache.TryGetValue(cacheKey, out League? league) && league != null)
+        if (memoryCache.TryGetValue(cacheKey, out League league))
         {
             var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.Location);
             result.Country = league.Country;
@@ -241,9 +236,10 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
         var url = $"https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlayDays?tournamentKey={key}";
         var response = await GetStringAndDelayAsync(url);
 
-        var data = JsonConvert.DeserializeObject<List<OrderOfPlayDay>>(response);
-        var id = data?.FirstOrDefault()?.OrderOfPlayDayId ?? 0;
-        var date = data?.FirstOrDefault()?.PlayDate ?? DateTime.Today;
+        var data = JsonExtensions.TryDeserializeObject<List<OrderOfPlayDay>>(response);
+        var firstDay = data.FirstOrDefault();
+        var id = firstDay?.OrderOfPlayDayId ?? 0;
+        var date = firstDay?.PlayDate ?? DateTime.Today;
         return (id, date);
     }
 

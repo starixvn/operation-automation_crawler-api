@@ -1,6 +1,4 @@
 using Microsoft.OpenApi.Models;
-using Microsoft.Extensions.Caching.Memory;
-using Tennis;
 using Tennis.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,8 +13,6 @@ services.CreateTimeIsHttpClient();
 // Register memory cache
 services.AddMemoryCache();
 
-services.AddScoped<AtpTourCrawler>();
-services.AddScoped<ItfTennisCrawler>();
 services.AddControllers();
 
 // Configure Swagger/OpenAPI
