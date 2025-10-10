@@ -36,6 +36,9 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
             var matches = await atpTourCrawler.GetMatches(league);
             models.AddRange(matches);
         }
+
+        models = models.Where(m => !string.IsNullOrEmpty(m.Home) && !string.IsNullOrEmpty(m.Away))
+            .ToList();
         return Ok(models);
     }
 
@@ -70,6 +73,8 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
                 models.AddRange(matches);
             }
 
+            models = models.Where(m => !string.IsNullOrEmpty(m.Home) && !string.IsNullOrEmpty(m.Away))
+                .ToList();
             return Ok(models);
         }
         catch (Exception e)
