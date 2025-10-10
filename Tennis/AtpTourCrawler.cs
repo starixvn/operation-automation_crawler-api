@@ -245,6 +245,11 @@ public class AtpTourCrawler(HttpClient client)
 
     public async Task<List<string>> GetActiveFlags()
     {
+        if (allActiveFlags.Count > 0)
+        {
+            return allActiveFlags;
+        }
+
         const string url = "https://www.atptour.com/assets/atptour/assets/flags.svg";
         var response = await client.GetStringAsync(url);
 
