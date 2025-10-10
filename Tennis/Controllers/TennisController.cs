@@ -58,17 +58,25 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
     [Route("itf-tennis/matches")]
     public async Task<IActionResult> ItfTennisMatches(string leagues = "https://www.itftennis.com/en/tournament/m25-kigali/rwa/2025/m-itf-rwa-2025-001;https://www.itftennis.com/en/tournament/w100-edmond-ok/usa/2025/M-ITF-BRA-2025-004/order-of-play/")
     {
-        var activeFlags = await atpTourCrawler.GetActiveFlags();
-        var leagueList = leagues.Split(';').Select(l=>l.TrimEnd('/')).ToList();
-        var models = new List<Match>();
-
-        foreach (var league in leagueList)
+        try
         {
-            var matches = await itfTennisCrawler.GetMatches(league, activeFlags);
-            models.AddRange(matches);
-        }
+            var activeFlags = await atpTourCrawler.GetActiveFlags();
+            var leagueList = leagues.Split(';').Select(l => l.TrimEnd('/')).ToList();
+            var models = new List<Match>();
 
-        return Ok(models);
+            foreach (var league in leagueList)
+            {
+                var matches = await itfTennisCrawler.GetMatches(league, activeFlags);
+                models.AddRange(matches);
+            }
+
+            return Ok(models);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e);
+        }
+      
     }
 
     //[HttpGet]
