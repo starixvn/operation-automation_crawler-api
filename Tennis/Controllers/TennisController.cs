@@ -18,6 +18,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
         var models = await atpTourCrawler.GetLeagues();
         models = models.Where(m => m.DateFrom <= DateTime.Today.AddDays(10))
             .Where(m => m.DateTo >= DateTime.Today.AddDays(-1))
+            .Distinct()
             .ToList();
         return Ok(models);
     }
@@ -28,7 +29,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
     {
         await atpTourCrawler.GetActiveFlags();
 
-        var leagueList = leagues.Split(';').Select(l => l.TrimEnd('/')).ToList();
+        var leagueList = leagues.Split(';').Select(l => l.TrimEnd('/')).Distinct().ToList();
         var models = new List<Match>();
 
         foreach (var league in leagueList)
@@ -49,6 +50,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
         var models = await itfTennisCrawler.GetLeagues();
         models = models.Where(m => m.DateFrom <= DateTime.Today.AddDays(10))
             .Where(m => m.DateTo >= DateTime.Today.AddDays(-1))
+            .Distinct()
             .ToList();
         return Ok(models);
     }
@@ -64,7 +66,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
         try
         {
             var activeFlags = await atpTourCrawler.GetActiveFlags();
-            var leagueList = leagues.Split(';').Select(l => l.TrimEnd('/')).ToList();
+            var leagueList = leagues.Split(';').Select(l => l.TrimEnd('/')).Distinct().ToList();
             var models = new List<Match>();
 
             foreach (var league in leagueList)

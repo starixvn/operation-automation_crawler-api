@@ -17,4 +17,9 @@ public record League
     public DateTime DateFrom { get; init; }
 
     public DateTime DateTo { get; init; }
+
+    public virtual bool Equals(League other)
+    {
+        return other != null && Source == other.Source;
+    }
 }
