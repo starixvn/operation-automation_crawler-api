@@ -5,10 +5,11 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Tennis;
 
-public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient, IMemoryCache memoryCache)
+public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, IMemoryCache memoryCache)
 {
     private const int DelayInSeconds = 1;
     private const string CacheKeyPrefix = "ItfTennisLeague_";
+    private static readonly HttpClient MatchHttpClient = HttpClientExtensions.CreateItfHttpClientInstance();
 
     public async Task<List<League>> GetLeagues()
     {
@@ -20,15 +21,15 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
         var dateFrom = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         var dateTo = dateFrom.AddMonths(1).AddDays(-1);
 
-        var menLeagues = await GetLeagues(string.Format(rootUrl, "MT", dateFrom, dateTo));
-        var womenLeagues = await GetLeagues(string.Format(rootUrl, "WT", dateFrom, dateTo));
+        var menLeagues = await GetLeagues(string.Format(rootUrl, "MT", dateFrom, dateTo), "MT");
+        var womenLeagues = await GetLeagues(string.Format(rootUrl, "WT", dateFrom, dateTo), "WT");
 
         // Combine all leagues into one list
         var allLeagues = menLeagues.Concat(womenLeagues).ToList();
         return allLeagues;
     }
 
-    private async Task<List<League>> GetLeagues(string url)
+    private async Task<List<League>> GetLeagues(string url, string group)
     {
         var response = await GetStringAndDelayAsync(url);
 
@@ -38,7 +39,7 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
             return [];
         }
 
-        var leagues= data.Items
+        var leagues = data.Items
             .Where(i => i.TourStatusDesc != "CANCELLED")
             .Select(tournament =>
         {
@@ -52,12 +53,14 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
                 DateFrom = dateFrom,
                 DateTo = dateTo,
                 Location = tournament.Location,
-                Country = tournament.HostNation
+                Country = tournament.HostNation,
+                Group = group
+
             };
         }).ToList();
 
-        leagues.ForEach(l => 
-        { 
+        leagues.ForEach(l =>
+        {
             var cacheKey = CacheKeyPrefix + l.Source.TrimEnd('/');
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromDays(7));
@@ -95,6 +98,7 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
     /// <returns></returns>
     private async Task<List<Match>> GetMatches(string matchUrl, string leagueUrl, DateTime date, List<string> activeFlags)
     {
+        
         var response = await GetStringAndDelayAsync(matchUrl);
 
         var courts = JsonExtensions.TryDeserializeObject<List<ItfResponse>>(response);
@@ -116,11 +120,11 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
     private async Task<Match> CreateMatch(ItfMatch match, string leagueUrl, string courtName, DateTime date, List<string> activeFlags)
     {
         var matchTime = ParseMatchTime(match.Schedule, date);
-        
+
         var homePlayers = MapPlayersFromTeam(match.Teams[0].Players);
         var awayPlayers = MapPlayersFromTeam(match.Teams[1].Players);
 
-        var result= new Match(match.MatchId)
+        var result = new Match(match.MatchId)
         {
             OriginalDate = matchTime,
             Date = matchTime,
@@ -142,6 +146,7 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
                 result.UtcOffset = timeIsModel.UtcOffset;
                 result.Date = matchTime.AddHours(-result.UtcOffset + 8);
                 result.UtcCity = timeIsModel.Location;
+                result.Group = league.Group;
             }
         }
 
@@ -212,7 +217,8 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
 
     private async Task<string> GetStringAndDelayAsync(string url)
     {
-        var response = await httpClient.GetAndUnzipStringAsync(url);
+        MatchHttpClient.SetItfDefaultHeader();
+        var response = await MatchHttpClient.GetAndUnzipStringAsync(url);
         await Task.Delay(TimeSpan.FromSeconds(DelayInSeconds));
         return response;
     }

@@ -32,7 +32,8 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
                     Date = tournament.FormattedDate,
                     DateFrom = dateFrom,
                     DateTo = dateTo,
-                    Location = tournament.Location
+                    Location = tournament.Location,
+                    Group = "ATP"
                 });
             }
         }
@@ -112,7 +113,8 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
                 Location = location,
                 Home = string.Join(" / ", homePlayers.Select(p => p.Name)),
                 Away = string.Join(" / ", awayPlayers.Select(p => p.Name)),
-                Source = leagueUrl
+                Source = leagueUrl,
+                Group = "ATP"
             });
         }
 

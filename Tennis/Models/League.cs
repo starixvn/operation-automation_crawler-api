@@ -18,6 +18,8 @@ public record League
 
     public DateTime DateTo { get; init; }
 
+    public string Group { get; init; }
+
     public virtual bool Equals(League other)
     {
         return other != null && Source == other.Source;

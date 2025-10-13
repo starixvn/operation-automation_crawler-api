@@ -22,6 +22,8 @@ public class Match(string id)
 
     public string Source { get; set; }
 
+    public string Group { get; set; }
+
     public string Id { get; } = id;
 
     public override bool Equals(object obj)
