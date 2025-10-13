@@ -17,8 +17,8 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, HttpClient httpClient
                       + "&searchString=&skip=0&take=100&nationCodes=&zoneCodes="
                       + "&dateFrom={1:yyyy-MM-dd}&dateTo={2:yyyy-MM-dd}&indoorOutdoor="
                       + "&categories=&isOrderAscending=true&orderField=startDate&surfaceCodes=";
-        var dateFrom = DateTime.Today.AddDays(-7);
-        var dateTo = DateTime.Today.AddDays(7);
+        var dateFrom = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var dateTo = dateFrom.AddMonths(1).AddDays(-1);
 
         var menLeagues = await GetLeagues(string.Format(rootUrl, "MT", dateFrom, dateTo));
         var womenLeagues = await GetLeagues(string.Format(rootUrl, "WT", dateFrom, dateTo));
