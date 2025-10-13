@@ -9,10 +9,11 @@ namespace Tennis.Extensions;
 public static class HttpClientExtensions
 {
     private const int DefaultTimeoutSeconds = 300;
-    private static readonly HttpClientHandler ItfHttpClientHandler = new()
-    {
-        CookieContainer = new CookieContainer(),
-        UseCookies = true
+    private static readonly CookieContainer ItfCookieContainer = new CookieContainer();
+    private static readonly HttpClientHandler ItfHttpClientHandler = new HttpClientHandler
+    {        
+        UseCookies = false,
+        AllowAutoRedirect = true
     };
 
     public static IHttpClientBuilder CreateAtpTourHttpClient(
@@ -56,14 +57,7 @@ public static class HttpClientExtensions
 
     public static HttpClient CreateItfHttpClientInstance()
     {
-        var handler = new HttpClientHandler
-        {
-            CookieContainer = new CookieContainer(),
-            UseCookies = true,
-            AllowAutoRedirect = true
-        };
-
-        var client = new HttpClient(handler);
+        var client = new HttpClient(ItfHttpClientHandler);
 
         SetItfDefaultHeader(client);
         client.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
@@ -85,9 +79,11 @@ public static class HttpClientExtensions
         client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
 
         // 1.3. Accept-Encoding (This is often handled automatically by HttpClient, but we specify it)
+        client.DefaultRequestHeaders.AcceptEncoding.Clear();
         client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br, zstd");
 
         // 1.4. Accept-Language
+        client.DefaultRequestHeaders.AcceptLanguage.Clear();
         client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
 
         // 1.5. Cache-Control and If-Modified-Since

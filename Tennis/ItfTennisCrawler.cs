@@ -7,7 +7,7 @@ namespace Tennis;
 
 public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, IMemoryCache memoryCache)
 {
-    private const int DelayInSeconds = 1;
+    private const int DelayInMilliseconds = 50;
     private const string CacheKeyPrefix = "ItfTennisLeague_";
     private static readonly HttpClient MatchHttpClient = HttpClientExtensions.CreateItfHttpClientInstance();
 
@@ -100,6 +100,11 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, IMemoryCache memoryCa
     {
         
         var response = await GetStringAndDelayAsync(matchUrl);
+
+        if (response.Contains("<META NAME=\"robots\" CONTENT=\"noindex,nofollow\">"))
+        {
+            throw new Exception("Robot detected: "+ matchUrl);
+        }
 
         var courts = JsonExtensions.TryDeserializeObject<List<ItfResponse>>(response);
 
@@ -207,7 +212,6 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, IMemoryCache memoryCa
     {
         var url = $"https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlayDays?tournamentKey={key}";
         var response = await GetStringAndDelayAsync(url);
-
         var data = JsonExtensions.TryDeserializeObject<List<OrderOfPlayDay>>(response);
         var firstDay = data.FirstOrDefault();
         var id = firstDay?.OrderOfPlayDayId ?? 0;
@@ -219,7 +223,7 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, IMemoryCache memoryCa
     {
         MatchHttpClient.SetItfDefaultHeader();
         var response = await MatchHttpClient.GetAndUnzipStringAsync(url);
-        await Task.Delay(TimeSpan.FromSeconds(DelayInSeconds));
+        await Task.Delay(TimeSpan.FromMilliseconds(DelayInMilliseconds));
         return response;
     }
 }
