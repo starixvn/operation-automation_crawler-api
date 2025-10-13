@@ -11,7 +11,6 @@ namespace Tennis;
 public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
 {
     private const string ActiveFlagsCacheKey = "ActiveFlags";
-    private readonly IMemoryCache memoryCache = memoryCache;
 
     public async Task<List<League>> GetLeagues()
     {

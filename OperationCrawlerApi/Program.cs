@@ -12,7 +12,6 @@ services.CreateTimeIsHttpClient();
 
 // Register memory cache
 services.AddMemoryCache();
-
 services.AddControllers();
 
 // Configure Swagger/OpenAPI

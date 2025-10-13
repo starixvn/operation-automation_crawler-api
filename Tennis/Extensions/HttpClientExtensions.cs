@@ -8,35 +8,30 @@ namespace Tennis.Extensions;
 public static class HttpClientExtensions
 {
     private const int DefaultTimeoutSeconds = 300;
+    private static readonly HttpClientHandler ItfHttpClientHandler = new HttpClientHandler
+    {
+        CookieContainer = new CookieContainer(),
+        UseCookies = true
+    };
 
     public static IHttpClientBuilder CreateAtpTourHttpClient(
         this IServiceCollection services)
     {
-        var cookieContainer = new CookieContainer();
-        var handler = new HttpClientHandler
-        {
-            CookieContainer = cookieContainer,
-            UseCookies = true
-        };
-
         return services.AddHttpClient<AtpTourCrawler>(client =>
         {
             client.DefaultRequestHeaders.Add("Accept", "text/html");
             client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en");
             client.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
-        }).ConfigurePrimaryHttpMessageHandler(() => handler);
+        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            CookieContainer = new CookieContainer(),
+            UseCookies = true
+        });
     }
 
     public static IHttpClientBuilder CreateItfHttpClient(
         this IServiceCollection services)
     {
-        var cookieContainer = new CookieContainer();
-        var handler = new HttpClientHandler
-        {
-            CookieContainer = cookieContainer,
-            UseCookies = true
-        };
-
         return services.AddHttpClient<ItfTennisCrawler>(client =>
         {
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0");
@@ -55,19 +50,12 @@ public static class HttpClientExtensions
             client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
             client.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
             client.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
-        }).ConfigurePrimaryHttpMessageHandler(() => handler);
+        }).ConfigurePrimaryHttpMessageHandler(() => ItfHttpClientHandler);
     }
 
     public static IHttpClientBuilder CreateTimeIsHttpClient(
         this IServiceCollection services)
     {
-        var cookieContainer = new CookieContainer();
-        var handler = new HttpClientHandler
-        {
-            CookieContainer = cookieContainer,
-            UseCookies = true
-        };
-
         return services.AddHttpClient<TimeIsCrawler>(client =>
         {
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0");
@@ -83,7 +71,14 @@ public static class HttpClientExtensions
             client.DefaultRequestHeaders.Add("Sec-Fetch-User", "?1");
             client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
             client.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
-        }).ConfigurePrimaryHttpMessageHandler(() => handler);
+        }).ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            return new HttpClientHandler
+            {
+                CookieContainer = new CookieContainer(),
+                UseCookies = true
+            };
+        });
     }
 
     public static async Task<string> GetAndUnzipStringAsync(this HttpClient client, string url)
