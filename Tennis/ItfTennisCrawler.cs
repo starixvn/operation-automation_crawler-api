@@ -98,11 +98,11 @@ public class ItfTennisCrawler(TimeIsCrawler timeIsCrawler, IMemoryCache memoryCa
     /// <returns></returns>
     private async Task<List<Match>> GetMatches(string matchUrl, string leagueUrl, DateTime date, List<string> activeFlags)
     {
-        
         var response = await GetStringAndDelayAsync(matchUrl);
-
+        Console.WriteLine(matchUrl);
         if (response.Contains("<META NAME=\"robots\" CONTENT=\"noindex,nofollow\">"))
         {
+            Console.WriteLine(response);
             throw new Exception("Robot detected: "+ matchUrl);
         }
 
