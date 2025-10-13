@@ -58,6 +58,7 @@ public static class ItfPlaywright
 
     public static async Task<string> GetJsonByPlayWright(string url = "https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId=2581740")
     {
+        Console.WriteLine("Playwright:" + url);
         await EnsureBrowserInitialized();
 
         var page = await _context.NewPageAsync();
@@ -78,6 +79,11 @@ public static class ItfPlaywright
                 throw new Exception($"HTTP {response.Status} received for URL: {url}");
 
             return await response.TextAsync();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Playwright error at {url}: {e.Message}");
+            throw e;
         }
         finally
         {

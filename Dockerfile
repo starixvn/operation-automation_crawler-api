@@ -17,36 +17,52 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
 
 FROM hub.nexdev.net/base/dotnet/core/aspnet:9.0-alpine AS base
 
-# Install Playwright system dependencies
-RUN apk add --no-cache \
-    libstdc++ \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    nodejs \
-    npm \
-    ffmpeg \
-    git \
-    python3 \
-    py3-pip \
-    xvfb \
-    dbus \
-    fontconfig
+# Install Node.js and Playwright system dependencies for .NET
+RUN apk add libstdc++
+RUN apk add chromium
+RUN apk add nss
+RUN apk add freetype
+RUN apk add freetype-dev
+RUN apk add harfbuzz
+RUN apk add ca-certificates
+RUN apk add ttf-freefont
+RUN apk add xvfb
+RUN apk add dbus
+RUN apk add fontconfig
+RUN apk add nodejs
+RUN apk add npm
+RUN apk add icu-libs
+RUN apk add krb5-libs
+RUN apk add libgcc
+RUN apk add libintl
+RUN apk add libssl3
+RUN apk add libstdc++
+RUN apk add zlib
+
+# Install PowerShell
+RUN apk add curl
+RUN mkdir -p /opt/microsoft/powershell/7
+RUN curl -L https://github.com/PowerShell/PowerShell/releases/download/v7.3.9/powershell-7.3.9-linux-alpine-x64.tar.gz -o /tmp/powershell.tar.gz
+RUN tar zxf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/7
+RUN chmod +x /opt/microsoft/powershell/7/pwsh
+RUN ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
+RUN rm /tmp/powershell.tar.gz
 
 WORKDIR /app
 COPY --from=builder /app .
 
-# Set Playwright configuration for Alpine
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-ENV PLAYWRIGHT_BROWSERS_PATH=0
+# Set Playwright configuration for Alpine Linux
+ENV PLAYWRIGHT_BROWSERS_PATH=/usr/bin
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
-# Install Playwright
-RUN npm install -g playwright@latest
+# Create required directories for Playwright
+RUN mkdir -p /ms-playwright/chromium-1060/chrome-linux \
+    && ln -s /usr/bin/chromium-browser /ms-playwright/chromium-1060/chrome-linux/chrome
+
+# Set additional environment variables for Playwright
+ENV CHROME_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_SKIP_DEPS_CHECK=1
 
 ENV HTTP_PROXY="http://proxysqd.nexdev.net:3128/"
 ENV HTTPS_PROXY="http://proxysqd.nexdev.net:3128/"
