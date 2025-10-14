@@ -22,7 +22,8 @@ public class TimeIsCrawler(HttpClient httpClient)
         }
 
         var url = $"https://time.is/{location}";
-        
+        Console.WriteLine($"Fetching time information for: {url}");
+
         try
         {
             using var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);

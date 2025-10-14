@@ -84,7 +84,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisCrawler it
         }
         catch (Exception e)
         {
-            return BadRequest(e);
+            return BadRequest(new { error = e.Message, stackTrace = e.StackTrace });
         }
       
     }

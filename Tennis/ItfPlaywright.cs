@@ -59,11 +59,20 @@ public static class ItfPlaywright
     public static async Task<string> GetJsonByPlayWright(string url = "https://www.itftennis.com/tennis/api/TournamentApi/GetOrderOfPlay?orderOfPlayDayId=2581740")
     {
         Console.WriteLine("Playwright:" + url);
-        await EnsureBrowserInitialized();
-
-        var page = await _context.NewPageAsync();
         try
         {
+            await EnsureBrowserInitialized();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Playwright error at EnsureBrowserInitialized: {e.Message}");
+            return e.Message;
+        }
+
+        IPage page = null;
+        try
+        {
+            page = await _context.NewPageAsync();
             await page.SetExtraHTTPHeadersAsync(_defaultHeaders);
 
             var response = await page.GotoAsync(url, new PageGotoOptions
@@ -73,21 +82,31 @@ public static class ItfPlaywright
             });
 
             if (response == null)
+            {
                 throw new Exception($"Failed to load URL: {url}");
-
+            }
+            
             if (!response.Ok)
+            {
                 throw new Exception($"HTTP {response.Status} received for URL: {url}");
+            }
+                
+            var result = await response.TextAsync();
+            Console.WriteLine(result);
 
-            return await response.TextAsync();
+            return result;
         }
         catch (Exception e)
         {
             Console.WriteLine($"Playwright error at {url}: {e.Message}");
-            throw e;
+            return e.Message;
         }
         finally
         {
-            await page.CloseAsync();
+            if (page != null)
+            {
+                await page.CloseAsync();
+            }
         }
     }
 
