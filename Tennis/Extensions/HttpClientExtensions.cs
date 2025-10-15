@@ -1,8 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Tennis.Extensions;
 
@@ -10,7 +10,7 @@ public static class HttpClientExtensions
 {
     private const int DefaultTimeoutSeconds = 300;
     private static readonly HttpClientHandler ItfHttpClientHandler = new()
-    {        
+    {
         UseCookies = false,
         AllowAutoRedirect = true
     };
@@ -28,6 +28,11 @@ public static class HttpClientExtensions
             CookieContainer = new CookieContainer(),
             UseCookies = true
         });
+    }
+
+    public static IHttpClientBuilder CreateN8nHttpClient(this IServiceCollection services)
+    {
+        return services.AddHttpClient<TriggerN8NWorkflow>();
     }
 
     public static HttpClient CreateItfHttpClientInstance()

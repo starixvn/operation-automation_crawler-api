@@ -6,7 +6,7 @@ namespace Tennis.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 
-public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisParser itfTennisParser) : ControllerBase
+public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisParser itfTennisParser, TriggerN8NWorkflow triggerWorkflow) : ControllerBase
 {
     /// <summary>
     /// </summary>
@@ -25,8 +25,10 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisParser itf
             var matches = await atpTourCrawler.GetMatches(league);
             league.Matches = matches.Where(m => !string.IsNullOrEmpty(m.Home))
                 .Where(m => !string.IsNullOrEmpty(m.Away))
-                .ToList();
+            .ToList();
         }
+
+        await triggerWorkflow.CallWorkFlowForATP(leagues);
 
         return Ok(leagues);
     }
@@ -38,7 +40,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisParser itf
     {
         var activeFlags = await atpTourCrawler.GetActiveFlags();
         var models = await itfTennisParser.Parse(tournaments, activeFlags);
-
+        await triggerWorkflow.CallWorkFlowForITF(models);
         return Ok(models);
     }
 
