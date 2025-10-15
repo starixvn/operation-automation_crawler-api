@@ -22,7 +22,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisParser itf
             .ToList();
         foreach (var league in leagues)
         {
-            var matches = await atpTourCrawler.GetMatches(league.Source);
+            var matches = await atpTourCrawler.GetMatches(league);
             league.Matches = matches.Where(m => !string.IsNullOrEmpty(m.Home))
                 .Where(m => !string.IsNullOrEmpty(m.Away))
                 .ToList();

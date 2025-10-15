@@ -1,6 +1,6 @@
 ﻿namespace Tennis.Models;
 
-public record League
+public class League
 {
     public string Source { get; init; }
 
@@ -19,6 +19,8 @@ public record League
     public DateTime DateTo { get; init; }
 
     public string Group { get; init; }
+
+    public string ScheduleUrl { get; set; } = string.Empty;
 
     public List<Match> Matches { get; set; } = new();
 

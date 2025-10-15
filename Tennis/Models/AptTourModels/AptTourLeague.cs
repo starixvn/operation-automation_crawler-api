@@ -28,4 +28,10 @@ public class Tournament
 
     [JsonProperty("Location")]
     public string Location { get; set; }
+
+    [JsonProperty("TournamentOverviewUrl")]
+    public string TournamentOverviewUrl { get; set; }
+
+    [JsonProperty("ScheduleUrl")]
+    public string ScheduleUrl { get; set; }
 }

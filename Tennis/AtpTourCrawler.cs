@@ -14,7 +14,23 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
 
     public async Task<List<League>> GetLeagues()
     {
-        const string url = "https://www.atptour.com/en/-/tournaments/calendar/tour";
+        const string tourUrl = "https://www.atptour.com/en/-/tournaments/calendar/tour";
+        const string challengerUrl = "https://www.atptour.com/en/-/tournaments/calendar/challenger";
+        var tours = await GetLeagues(tourUrl);
+        var challengers = await GetLeagues(challengerUrl);
+
+        var leagues = tours.Concat(challengers).ToList();
+        leagues = leagues
+            .Where(l => l.DateFrom <= DateTime.Today.AddDays(10))
+            .Where(l => l.DateTo >= DateTime.Today.AddDays(-2))
+            .Distinct()
+            .ToList();
+
+        return leagues;
+    }
+
+    private async Task<List<League>> GetLeagues(string url)
+    {
         var response = await client.GetStringAsync(url);
         var tournamentResponse = JsonConvert.DeserializeObject<TournamentResponse>(response);
 
@@ -26,13 +42,14 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
                 var (dateFrom, dateTo) = DateTimeExtensions.ParseAtpTourDateRange(tournament.FormattedDate);
                 leagues.Add(new League
                 {
-                    Source = $"https://www.atptour.com/en/scores/current/shanghai/{tournament.Id}/daily-schedule",
+                    Source = $"https://www.atptour.com{tournament.TournamentOverviewUrl}",
                     Name = tournament.Name,
                     Id = tournament.Id,
                     Date = tournament.FormattedDate,
                     DateFrom = dateFrom,
                     DateTo = dateTo,
                     Location = tournament.Location,
+                    ScheduleUrl = $"https://www.atptour.com{tournament.ScheduleUrl}",
                     Group = "ATP"
                 });
             }
@@ -40,21 +57,25 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
 
         return leagues;
     }
-
-
-    public async Task<List<Match>> GetMatches(string leagueUrl)
+    
+    public async Task<List<Match>> GetMatches(League league)
     {
-        var days = await GetDaysOfLeague(leagueUrl);
+        if (string.IsNullOrEmpty(league.ScheduleUrl))
+        {
+            return [];
+        }
+
+        var days = await GetDaysOfLeague(league.ScheduleUrl);
         if (days.Count == 0)
         {
-            return await GetMatches(leagueUrl, string.Empty);
+            return await GetMatches(league.ScheduleUrl, string.Empty);
         }
         else
         {
             var result = new List<Match>();
             foreach (var day in days)
             {
-                var matches = await GetMatches(leagueUrl, day);
+                var matches = await GetMatches(league.ScheduleUrl, day);
                 result.AddRange(matches);
             }
 
@@ -121,10 +142,9 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
         return schedules;
     }
 
-    private async Task<List<string>> GetDaysOfLeague(string key)
+    private async Task<List<string>> GetDaysOfLeague(string leagueUrl)
     {
-        var url = $"https://www.atptour.com/en/scores/current/leaguename/{key}/daily-schedule";
-        var response = await client.GetStringAsync(url);
+        var response = await client.GetStringAsync(leagueUrl);
         var doc = new HtmlDocument();
         doc.LoadHtml(response);
 
