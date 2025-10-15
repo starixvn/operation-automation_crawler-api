@@ -1,48 +1,37 @@
 ﻿using Newtonsoft.Json;
 
 namespace Tennis.Models.ItfTennisModels;
-public class ItfResponse
-{
-    [JsonProperty("courtName")]
-    public string CourtName { get; set; } = string.Empty;
 
-    [JsonProperty("matches")]
-    public List<ItfMatch> Matches { get; set; } = [];
+public class ItfTennisPlayer
+{
+    public string familyName { get; set; }
+    public string givenName { get; set; }
+    public bool hiddenPlayer { get; set; }
+    public string nationality { get; set; }
+    public int playerId { get; set; }
+    public string profileLink { get; set; }
 }
 
-public class ItfMatch
+
+public class ItfTennisMatch
 {
-    [JsonProperty("matchId")]
-    public string MatchId { get; set; } = string.Empty;
+    public string tournamentKey { get; set; }
+    public string ageCategory { get; set; }
+    public List<ItfTennisPlayer> awayPlayers { get; set; }
+    public string eventClassificationCode { get; set; }
+    public string eventClassificationDesc { get; set; }
+    public string eventDesc { get; set; }
+    public string h2hLink { get; set; }
+    public List<ItfTennisPlayer> homePlayers { get; set; }
+    public string liveScoresLink { get; set; }
+    public string matchDescription { get; set; }
+    public int matchId { get; set; }
+    public int matchNumber { get; set; }
+    public string playStatusCode { get; set; }
+    public string playStatusDesc { get; set; }
+    public string roundCode { get; set; }
+    public string roundGroupDesc { get; set; }
+    public string schedule { get; set; }
 
-
-    [JsonProperty("schedule")]
-    public string Schedule { get; set; } = string.Empty;
-
-    [JsonProperty("teams")]
-    public List<ItfTeam> Teams { get; set; } = [];
-}
-
-public class ItfTeam
-{
-    [JsonProperty("players")]
-    public List<ItfPlayer> Players { get; set; } = [];
-}
-
-public class ItfPlayer
-{
-    [JsonProperty("playerId")]
-    public long PlayerId { get; set; }
-
-    [JsonProperty("nationality")]
-    public string Nationality { get; set; } = string.Empty;
-
-    [JsonProperty("givenName")]
-    public string GivenName { get; set; } = string.Empty;
-
-    [JsonProperty("familyName")]
-    public string FamilyName { get; set; } = string.Empty;
-
-    [JsonProperty("profileLink")]
-    public string ProfileLink { get; set; } = string.Empty;
+    public DateTime playDate { get; set; }
 }

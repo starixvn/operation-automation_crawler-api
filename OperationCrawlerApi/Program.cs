@@ -9,7 +9,7 @@ var services = builder.Services;
 services.AddHealthChecks();
 services.CreateAtpTourHttpClient();
 services.CreateTimeIsHttpClient();
-services.AddTransient<ItfTennisCrawler>();
+services.AddTransient<ItfTennisParser>();
 
 // Register memory cache
 services.AddMemoryCache();

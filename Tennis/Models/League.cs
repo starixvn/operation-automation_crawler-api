@@ -20,6 +20,8 @@ public record League
 
     public string Group { get; init; }
 
+    public List<Match> Matches { get; set; } = new();
+
     public virtual bool Equals(League other)
     {
         return other != null && Source == other.Source;

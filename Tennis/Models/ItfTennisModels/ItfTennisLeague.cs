@@ -1,50 +1,36 @@
 ﻿using Newtonsoft.Json;
 
 namespace Tennis.Models.ItfTennisModels;
-public class TournamentResponse
+
+public class ItfTennisLeague
 {
-    [JsonProperty("url")]
-    public string Url { get; set; } = string.Empty;
+    public string tournamentName { get; set; }
 
-    [JsonProperty("items")]
-    public List<TournamentItem> Items { get; set; } = [];
+    public string dates { get; set; }
+    public string location { get; set; }
+    public string category { get; set; }
+    public string prizeMoney { get; set; }
+    public string liveLink { get; set; }
+    public string surfaceDesc { get; set; }
+    public string surfaceCode { get; set; }
+    public string tourStatusCode { get; set; }
+    public string tourStatusDesc { get; set; }
+    public string indoorOrOutDoor { get; set; }
+    public bool isRecognised { get; set; }
+    public string recognisedTournamentLink { get; set; }
+    public int id { get; set; }
+    public string name { get; set; }
+    public string promotionalName { get; set; }
+    public string hostNation { get; set; }
+    public string hostNationCode { get; set; }
+    public string venue { get; set; }
+    public DateTime startDate { get; set; }
+    public DateTime endDate { get; set; }
+    public string tournamentKey { get; set; }
+    public string tennisCategoryCode { get; set; }
+    public string tournamentLink { get; set; }
+    public int year { get; set; }
+    public string liveStreamingUrl { get; set; }
 
-    [JsonProperty("totalItems")]
-    public int TotalItems { get; set; }
-}
-
-public class TournamentItem
-{
-    [JsonProperty("tournamentName")]
-    public string TournamentName { get; set; } = string.Empty;
-
-    [JsonProperty("tournamentKey")]
-    public string TournamentKey { get; set; } = string.Empty;
-
-    [JsonProperty("dates")]
-    public string Dates { get; set; } = string.Empty;
-
-    [JsonProperty("location")]
-    public string Location { get; set; } = string.Empty;
-
-    [JsonProperty("hostNation")]
-    public string HostNation { get; set; } = string.Empty;
-
-    [JsonProperty("tournamentLink")]
-    public string TournamentLink { get; set; } = string.Empty;
-
-    [JsonProperty("tourStatusDesc")]
-    public string TourStatusDesc { get; set; } = string.Empty;
-}
-
-public class OrderOfPlayDay
-{
-    [JsonProperty("orderOfPlayDayId")]
-    public long OrderOfPlayDayId { get; set; }
-
-    [JsonProperty("playDate")]
-    public DateTime PlayDate { get; set; }
-
-    [JsonProperty("playDateString")]
-    public string PlayDateString { get; set; } = string.Empty;
+    public List<ItfTennisMatch> matches { get; set; }
 }
