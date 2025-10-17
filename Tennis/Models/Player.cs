@@ -1,19 +1,34 @@
 ﻿namespace Tennis.Models;
 
 
-public record Player
+public class Player(string id)
 {
-    public string Id { get; set; }
+    public string Id { get; } = id;
 
-    public string Name { get; init; }
+    public string Name { get; set; }
 
-    public DateTime BirthDay { get; init; }
+    public DateTime BirthDay { get; set; }
 
-    public string Nationality { get; init; }
+    public string Nationality { get; set; }
 
-    public string Birthplace { get; init; }
+    public string Birthplace { get; set; }
 
-    public string Gender { get; init; }
+    public string Gender { get; set; }
 
-    public string Source { get; init; }
+    public string Source { get; set; }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is Player other)
+        {
+            return Id == other.Id;
+        }
+
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return Id.GetHashCode();
+    }
 }

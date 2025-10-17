@@ -100,9 +100,8 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
     {
         return teamPlayers
             .Where(p => p != null)
-            .Select(p => new Player
+            .Select(p => new Player(p!.playerId.ToString())
             {
-                Id = p!.playerId.ToString(),
                 Name = $"{p.givenName} {p.familyName}".Trim(),
                 Nationality = p.nationality,
                 Source = p.profileLink
