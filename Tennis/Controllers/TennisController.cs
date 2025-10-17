@@ -23,6 +23,7 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisParser itf
         foreach (var league in leagues)
         {
             var matches = await atpTourCrawler.GetMatches(league);
+            Console.WriteLine($"Found {matches.Count} matches for league {league.ScheduleUrl}");
             league.Matches = matches.Where(m => !string.IsNullOrEmpty(m.Home))
                 .Where(m => !string.IsNullOrEmpty(m.Away))
             .ToList();

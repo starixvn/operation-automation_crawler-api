@@ -8,6 +8,7 @@ RUN dotnet nuget add source https://nuget.nexdev.net/api/v2
 RUN --mount=type=cache,target=/root/.nuget/packages \
 	dotnet restore -v n -r linux-x64 OperationCrawlerApi/OperationCrawlerApi.csproj
 
+COPY ./Helper/. ./Helper
 COPY ./Tennis/. ./Tennis
 COPY ./OperationCrawlerApi/. ./OperationCrawlerApi
 

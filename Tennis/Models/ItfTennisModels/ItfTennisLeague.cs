@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Tennis.Models.ItfTennisModels;
+﻿namespace Tennis.Models.ItfTennisModels;
 
 public class ItfTennisLeague
 {
@@ -33,4 +31,6 @@ public class ItfTennisLeague
     public string liveStreamingUrl { get; set; }
 
     public List<ItfTennisMatch> matches { get; set; }
+
+    public List<ItfTennisPlayer> players { get; set; }
 }

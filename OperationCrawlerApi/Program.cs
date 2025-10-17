@@ -1,19 +1,24 @@
+using Fanex.Caching.Redis;
+using Helper;
 using Microsoft.OpenApi.Models;
 using Tennis;
 using Tennis.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
+var configuration = builder.Configuration;
 // Add services to the container.
 
 services.AddHealthChecks();
-services.CreateAtpTourHttpClient();
 services.CreateTimeIsHttpClient();
 services.CreateN8nHttpClient();
 services.AddTransient<ItfTennisParser>();
+services.AddTransient<DynamicCaching>();
+services.AddTransient<AtpTourCrawler>();
 
 // Register memory cache
 services.AddMemoryCache();
+services.AddRedisCache(configuration.GetSection("FanexCachingRedis"));
 services.AddControllers();
 
 // Configure Swagger/OpenAPI

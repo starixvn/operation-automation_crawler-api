@@ -1,9 +1,10 @@
 ﻿using System.Net;
+using Helper;
 using HtmlAgilityPack;
 
 namespace Tennis;
 
-public class TimeIsCrawler(HttpClient httpClient)
+public class TimeIsCrawler(HttpClient httpClient, DynamicCaching cache)
 {
     public record TimeIsModel
     {
@@ -12,11 +13,11 @@ public class TimeIsCrawler(HttpClient httpClient)
         public string Location { get; init; }        
     }
 
-    private static readonly Dictionary<string, TimeIsModel> Cache = new();
     public async Task<TimeIsModel> GetTimeIsModel(string location)
     {
         location = location.ToLower().Replace(" city", "").Trim();
-        if (Cache.TryGetValue(location, out var cachedModel))
+        var cacheKey = $"TimeIs-{location}";
+        if (cache.TryGetValue(cacheKey, out TimeIsModel cachedModel))
         {
             return cachedModel;
         }
@@ -62,7 +63,7 @@ public class TimeIsCrawler(HttpClient httpClient)
                 UtcOffset = utcOffset,
                 Location = locationText
             };
-            Cache[location] = model;
+            cache.SetValue(cacheKey, model, TimeSpan.FromDays(30));
 
             return model;
         }

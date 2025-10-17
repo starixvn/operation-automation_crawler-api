@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Tennis.Models.ItfTennisModels;
+﻿namespace Tennis.Models.ItfTennisModels;
 
 public class ItfTennisPlayer
 {

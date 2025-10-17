@@ -1,6 +1,9 @@
+using Microsoft.Extensions.Caching.Abstractions;
+using Microsoft.Extensions.Caching.InMemory;
 using Microsoft.Extensions.DependencyInjection;
 using System.IO.Compression;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -9,92 +12,29 @@ namespace Tennis.Extensions;
 public static class HttpClientExtensions
 {
     private const int DefaultTimeoutSeconds = 300;
-    private static readonly HttpClientHandler ItfHttpClientHandler = new()
+  
+    public static HttpClient CreateAtpTourHttpClient()
     {
-        UseCookies = false,
-        AllowAutoRedirect = true
-    };
-
-    public static IHttpClientBuilder CreateAtpTourHttpClient(
-        this IServiceCollection services)
-    {
-        return services.AddHttpClient<AtpTourCrawler>(client =>
+        var httpClientHandler = new  HttpClientHandler
         {
-            client.DefaultRequestHeaders.Add("Accept", "text/html");
-            client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en");
-            client.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
-        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-        {
-            CookieContainer = new CookieContainer(),
-            UseCookies = true
-        });
-    }
+            UseCookies = false,
+            AllowAutoRedirect = true,
+            CookieContainer = new CookieContainer(),    
+        };
+        var cacheExpirationPerHttpResponseCode = CacheExpirationProvider.CreateSimple(TimeSpan.FromDays(7), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(5));
+        var handler = new InMemoryCacheHandler(httpClientHandler, cacheExpirationPerHttpResponseCode);
 
-    public static IHttpClientBuilder CreateN8nHttpClient(this IServiceCollection services)
-    {
-        return services.AddHttpClient<TriggerN8NWorkflow>();
-    }
-
-    public static HttpClient CreateItfHttpClientInstance()
-    {
-        var client = new HttpClient(ItfHttpClientHandler);
-
-        SetItfDefaultHeader(client);
+        var client = new HttpClient(handler);
+        client.DefaultRequestHeaders.Add("Accept", "text/html");
+        client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en");
         client.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
 
         return client;
     }
 
-    public static void SetItfDefaultHeader(this HttpClient client)
+    public static IHttpClientBuilder CreateN8nHttpClient(this IServiceCollection services)
     {
-        const string baseAuthority = "https://www.itftennis.com";
-        // === 1. Set standard required headers ===
-
-        // 1.1. User-Agent
-        // The User-Agent string is crucial for mimicking a browser.
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36");
-
-        // 1.2. Accept Header
-        client.DefaultRequestHeaders.Accept.Clear();
-        client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-
-        // 1.3. Accept-Encoding (This is often handled automatically by HttpClient, but we specify it)
-        client.DefaultRequestHeaders.AcceptEncoding.Clear();
-        client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br");
-
-        // 1.4. Accept-Language
-        client.DefaultRequestHeaders.AcceptLanguage.Clear();
-        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
-
-        // 1.5. Cache-Control and If-Modified-Since
-        client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { MaxAge = TimeSpan.FromSeconds(0) };
-        client.DefaultRequestHeaders.IfModifiedSince = new DateTimeOffset(2025, 10, 13, 3, 53, 36, TimeSpan.Zero); // GMT time
-
-        // 1.6. Upgrade-Insecure-Requests
-        client.DefaultRequestHeaders.TryAddWithoutValidation("Upgrade-Insecure-Requests", "1");
-
-        // 1.7. Referer Policy (simulated via the Referer header)
-        // Although the API request is often direct, providing a Referer is safer for scraping.
-        client.DefaultRequestHeaders.Referrer = new Uri(baseAuthority);
-
-
-        // === 2. Set Chrome-specific/Sec-Fetch/Custom Headers ===
-        // HttpClient doesn't have native properties for these, so we use TryAddWithoutValidation.
-        // Note: :authority, :method, :path, :scheme are pseudo-headers in HTTP/2 and not sent as standard headers.
-
-        // Sec-Ch-Ua Headers (Client Hints)
-        client.DefaultRequestHeaders.TryAddWithoutValidation("sec-ch-ua", "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"Google Chrome\";v=\"140\"");
-        client.DefaultRequestHeaders.TryAddWithoutValidation("sec-ch-ua-mobile", "?0");
-        client.DefaultRequestHeaders.TryAddWithoutValidation("sec-ch-ua-platform", "\"Windows\"");
-
-        // Sec-Fetch Headers
-        client.DefaultRequestHeaders.TryAddWithoutValidation("sec-fetch-dest", "document");
-        client.DefaultRequestHeaders.TryAddWithoutValidation("sec-fetch-mode", "navigate");
-        client.DefaultRequestHeaders.TryAddWithoutValidation("sec-fetch-site", "none");
-        client.DefaultRequestHeaders.TryAddWithoutValidation("sec-fetch-user", "?1");
-
-        // Priority
-        client.DefaultRequestHeaders.TryAddWithoutValidation("priority", "u=0, i");
+        return services.AddHttpClient<TriggerN8NWorkflow>();
     }
 
     public static IHttpClientBuilder CreateTimeIsHttpClient(

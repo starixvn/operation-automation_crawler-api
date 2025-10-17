@@ -1,17 +1,17 @@
 ﻿using Fizzler.Systems.HtmlAgilityPack;
 using HtmlAgilityPack;
-using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
-using System;
+using Helper;
 using Tennis.Extensions;
 using Tennis.Models;
 using Tennis.Models.AptTourModels;
 
 namespace Tennis;
 
-public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
+public class AtpTourCrawler(DynamicCaching cache)
 {
     private const string ActiveFlagsCacheKey = "ActiveFlags";
+    private static readonly HttpClient Client = HttpClientExtensions.CreateAtpTourHttpClient();
 
     public async Task<List<League>> GetLeagues()
     {
@@ -23,16 +23,16 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
         var leagues = tours.Concat(challengers).ToList();
         leagues = leagues
             .Where(l => l.DateFrom <= DateTime.Today.AddDays(10))
-            .Where(l => l.DateTo >= DateTime.Today.AddDays(-2))
+            .Where(l => l.DateTo >= DateTime.Today.AddDays(-1))
             .Distinct()
             .ToList();
-
+        Console.WriteLine($"Found {leagues.Count} leagues");
         return leagues;
     }
 
     private async Task<List<League>> GetLeagues(string url, string group)
     {
-        var response = await client.GetStringAsync(url);
+        var response = await Client.GetStringAsync(url);
         var tournamentResponse = JsonConvert.DeserializeObject<TournamentResponse>(response);
 
         var leagues = new List<League>();
@@ -41,13 +41,15 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
             foreach (var tournament in tournamentDate.Tournaments)
             {
                 var (dateFrom, dateTo) = DateTimeExtensions.ParseAtpTourDateRange(tournament.FormattedDate);
-                if (dateFrom > DateTime.Today.AddDays(10) || dateTo < DateTime.Today.AddDays(-2))
+                if (dateFrom > DateTime.Today.AddDays(10) || dateTo < DateTime.Today.AddDays(-1))
                 {
                     continue;
                 }
 
                 var leagueUrl = $"https://www.atptour.com{tournament.TournamentOverviewUrl}";
                 var players = await GetPlayersFromTournament(leagueUrl);
+                var playerNames = players.Select(p => p.Name).ToList();
+                Console.WriteLine($"Found {players.Count} players for league {leagueUrl}");
                 leagues.Add(new League
                 {
                     Source = leagueUrl,
@@ -59,7 +61,7 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
                     Location = tournament.Location,
                     ScheduleUrl = $"https://www.atptour.com{tournament.ScheduleUrl}",
                     Group = group,
-                    Players = players
+                    Players = playerNames
                 });
             }
         }
@@ -99,7 +101,7 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
             leagueUrl += $"?day={day}";
         }
 
-        var response = await client.GetStringAsync(leagueUrl);
+        var response = await Client.GetStringAsync(leagueUrl);
         var doc = new HtmlDocument();
         doc.LoadHtml(response);
 
@@ -153,7 +155,7 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
 
     private async Task<List<string>> GetDaysOfLeague(string leagueUrl)
     {
-        var response = await client.GetStringAsync(leagueUrl);
+        var response = await Client.GetStringAsync(leagueUrl);
         var doc = new HtmlDocument();
         doc.LoadHtml(response);
 
@@ -168,15 +170,15 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
     {
         // Extract player ID from URL
         var id = url.Replace("/overview", "").TrimEnd('/').Split('/').Last().Split('/')[0];
-
+        var playerCacheKey = $"AtpPlayer-{id}";
         // Try to get player from cache
-        if (memoryCache.TryGetValue(id, out Player cachedPlayer))
+        if (cache.TryGetValue(playerCacheKey, out Player cachedPlayer))
         {
             return cachedPlayer;
         }
 
         var apiUrl = $"https://www.atptour.com/en/-/www/players/hero/{id}?v=1";
-        var response = await client.GetStringAsync(apiUrl);
+        var response = await Client.GetStringAsync(apiUrl);
 
         var playerResponse = JsonConvert.DeserializeObject<PlayerResponse>(response);
         var activeFlags = await GetActiveFlags();
@@ -189,11 +191,7 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
             Birthplace = playerResponse.BirthCity
         };
 
-        // Cache the player data for 30 days
-        var cacheOptions = new MemoryCacheEntryOptions()
-            .SetAbsoluteExpiration(TimeSpan.FromDays(30));
-
-        memoryCache.Set(id, player, cacheOptions);
+        cache.SetValue(playerCacheKey, player, TimeSpan.FromDays(30));
 
         return player;
     }
@@ -208,7 +206,6 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
         {
             return [];
         }
-
         for (var i = 0; i < playerLinks.Count; i++)
         {
             var flagLink = flagLinks[i];
@@ -225,13 +222,13 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
 
     public async Task<List<string>> GetActiveFlags()
     {
-        if (memoryCache.TryGetValue(ActiveFlagsCacheKey, out List<string> cachedFlags))
+        if (cache.TryGetValue(ActiveFlagsCacheKey, out List<string> cachedFlags))
         {
             return cachedFlags;
         }
 
         const string url = "https://www.atptour.com/assets/atptour/assets/flags.svg";
-        var response = await client.GetStringAsync(url);
+        var response = await Client.GetStringAsync(url);
 
         var doc = new HtmlDocument();
         doc.LoadHtml(response);
@@ -248,29 +245,38 @@ public class AtpTourCrawler(HttpClient client, IMemoryCache memoryCache)
             }
         }
 
-        var cacheOptions = new MemoryCacheEntryOptions()
-            .SetAbsoluteExpiration(TimeSpan.FromDays(1));
-
-        memoryCache.Set(ActiveFlagsCacheKey, activeFlags, cacheOptions);
+        cache.SetValue(ActiveFlagsCacheKey, activeFlags, TimeSpan.FromDays(1));
 
         return activeFlags;
     }
 
     public async Task<List<Player>> GetPlayersFromTournament(string leagueUrl)
     {
+        var cacheKey ="AtpTournamentPlayers-" + leagueUrl;
+        if (cache.TryGetValue(cacheKey, out List<Player> cachedPlayers))
+        {
+            if (cachedPlayers.Count > 0)
+            {
+                return cachedPlayers;
+            }
+        }
+
         var drawUrls = GetDrawLink(leagueUrl);
         var singlePlayers = await GetPlayersFromTournament(drawUrls, "singles");
         var doublePlayers = await GetPlayersFromTournament(drawUrls, "doubles");
         var qualifierPlayers = await GetPlayersFromTournament(drawUrls, "qualifiersingles");
 
-        return singlePlayers.Concat(doublePlayers).Concat(qualifierPlayers).Distinct().ToList();
+        var players= singlePlayers.Concat(doublePlayers).Concat(qualifierPlayers).Distinct().ToList();
+        cache.SetValue(cacheKey, players, TimeSpan.FromDays(30));
+
+        return players;
     }
 
     private async Task<List<Player>> GetPlayersFromTournament(string drawUrls, string matchtype)
     {
         var result = new List<Player>();
         var url = drawUrls + $"?matchtype={matchtype}";
-        var response = await client.GetStringAsync(url);
+        var response = await Client.GetStringAsync(url);
 
         var doc = new HtmlDocument();
         doc.LoadHtml(response);

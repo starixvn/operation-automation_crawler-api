@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="Fanex.Caching.Redis" Version="2.2.8" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.10" />
+
+	</ItemGroup>
+</Project>

@@ -27,18 +27,40 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
                 Country = tournament.hostNation,
                 Group = tournament.tennisCategoryCode
             };
-            var itfMatchesForLeague = tournament.matches ?? [];
-            var matches = new List<Match>();
-            foreach (var m in itfMatchesForLeague)
-            {
-                var match = await CreateMatch(m, tournament, activeFlags);
-                matches.Add(match);
-            }
-            league.Matches = matches;
+            league.Matches = await ParseMatches(activeFlags, tournament);
+            league.Players = ParsePlayers(activeFlags, tournament);
+
             leagues.Add(league);
         }
 
         return leagues;
+    }
+
+    private async Task<List<Match>> ParseMatches(List<string> activeFlags, ItfTennisLeague tournament)
+    {
+        var itfMatchesForLeague = tournament.matches ?? [];
+        var matches = new List<Match>();
+        foreach (var m in itfMatchesForLeague)
+        {
+            var match = await CreateMatch(m, tournament, activeFlags);
+            matches.Add(match);
+        }
+
+        return matches;
+    }
+
+    private List<string> ParsePlayers(List<string> activeFlags, ItfTennisLeague tournament)
+    {
+        var itfPlayersForLeague = tournament.players ?? [];
+        var players =  MapPlayersFromTeam(itfPlayersForLeague);
+
+        var playerNames = players.Select(p =>
+        {
+            var flag = "flag-" + p.Nationality.ToLower();
+            return activeFlags.Contains(flag) ? $"{p.Name} ({p.Nationality})" : p.Name;
+        }).ToList();
+
+        return playerNames;
     }
 
     private async Task<Match> CreateMatch(ItfTennisMatch match, ItfTennisLeague league, List<string> activeFlags)
@@ -114,6 +136,7 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
         return string.Join(" / ", players.Select(p =>
         {
             var flag = "flag-" + p.Nationality.ToLower();
+
             return activeFlags.Contains(flag) ? $"{p.Name} ({p.Nationality})" : p.Name;
         }));
     }

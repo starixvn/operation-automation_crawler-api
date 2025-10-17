@@ -24,7 +24,7 @@ public class League
 
     public List<Match> Matches { get; set; } = new();
 
-    public List<Player> Players { get; set; } = new();
+    public List<string> Players { get; set; } = new();
 
     public virtual bool Equals(League other)
     {
