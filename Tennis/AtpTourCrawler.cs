@@ -1,4 +1,5 @@
-﻿using Fizzler.Systems.HtmlAgilityPack;
+﻿using System.Globalization;
+using Fizzler.Systems.HtmlAgilityPack;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 using Helper;
@@ -79,14 +80,14 @@ public class AtpTourCrawler(DynamicCaching cache)
         var days = await GetDaysOfLeague(league.ScheduleUrl);
         if (days.Count == 0)
         {
-            return await GetMatches(league.ScheduleUrl, string.Empty);
+            return await GetMatches(league.ScheduleUrl, string.Empty, league.Group);
         }
         else
         {
             var result = new List<Match>();
             foreach (var day in days)
             {
-                var matches = await GetMatches(league.ScheduleUrl, day);
+                var matches = await GetMatches(league.ScheduleUrl, day, league.Group);
                 result.AddRange(matches);
             }
 
@@ -94,7 +95,7 @@ public class AtpTourCrawler(DynamicCaching cache)
         }
     }
 
-    private async Task<List<Match>> GetMatches(string leagueUrl, string day)
+    private async Task<List<Match>> GetMatches(string leagueUrl, string day, string group)
     {
         if (!string.IsNullOrEmpty(day))
         {
@@ -146,7 +147,7 @@ public class AtpTourCrawler(DynamicCaching cache)
                 Home = string.Join(" / ", homePlayers.Select(p => p.Name)),
                 Away = string.Join(" / ", awayPlayers.Select(p => p.Name)),
                 Source = leagueUrl,
-                Group = "ATP"
+                Group = group
             });
         }
 
@@ -161,7 +162,19 @@ public class AtpTourCrawler(DynamicCaching cache)
 
         var dropdown = doc.DocumentNode.QuerySelector("#matchDate-filter");
         var options = dropdown?.SelectNodes(".//option");
-        var days = options?.Select(option => option.GetAttributeValue("value", "")).ToList();
+        var days = options?.Select(option => option.GetAttributeValue("value", ""))
+            .Select(d=>d.Trim())
+            .Where(d=>!string.IsNullOrEmpty(d))
+            .Select(d =>
+            {
+                var date = DateTime.TryParseExact(d, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate)
+                    ? parsedDate
+                    : DateTime.MinValue;
+                return date;
+            })
+            .Where(d=>d>=DateTime.Today)
+            .Select(d=>d.ToString("yyyy-MM-dd"))
+            .ToList();
 
         return days ?? [];
     }
