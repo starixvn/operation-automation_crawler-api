@@ -1,8 +1,8 @@
-﻿using System.Globalization;
-using Fizzler.Systems.HtmlAgilityPack;
+﻿using Fizzler.Systems.HtmlAgilityPack;
+using Helper;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
-using Helper;
+using System.Globalization;
 using Tennis.Extensions;
 using Tennis.Models;
 using Tennis.Models.AptTourModels;
@@ -144,8 +144,8 @@ public class AtpTourCrawler(DynamicCaching cache)
                 Country = "ATP Tour",
                 Date = matchDate.AddHours(8),
                 Location = location,
-                Home = string.Join(" / ", homePlayers.Select(p => p.Name)),
-                Away = string.Join(" / ", awayPlayers.Select(p => p.Name)),
+                Home = string.Join("/", homePlayers.Select(p => p.Name)),
+                Away = string.Join("/", awayPlayers.Select(p => p.Name)),
                 Source = leagueUrl,
                 Group = group
             });
@@ -163,8 +163,8 @@ public class AtpTourCrawler(DynamicCaching cache)
         var dropdown = doc.DocumentNode.QuerySelector("#matchDate-filter");
         var options = dropdown?.SelectNodes(".//option");
         var days = options?.Select(option => option.GetAttributeValue("value", ""))
-            .Select(d=>d.Trim())
-            .Where(d=>!string.IsNullOrEmpty(d))
+            .Select(d => d.Trim())
+            .Where(d => !string.IsNullOrEmpty(d))
             .Select(d =>
             {
                 var date = DateTime.TryParseExact(d, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate)
@@ -172,8 +172,8 @@ public class AtpTourCrawler(DynamicCaching cache)
                     : DateTime.MinValue;
                 return date;
             })
-            .Where(d=>d>=DateTime.Today)
-            .Select(d=>d.ToString("yyyy-MM-dd"))
+            .Where(d => d >= DateTime.Today)
+            .Select(d => d.ToString("yyyy-MM-dd"))
             .ToList();
 
         return days ?? [];
@@ -265,7 +265,7 @@ public class AtpTourCrawler(DynamicCaching cache)
 
     public async Task<List<Player>> GetPlayersFromTournament(string leagueUrl)
     {
-        var cacheKey ="AtpTournamentPlayers-" + leagueUrl;
+        var cacheKey = "AtpTournamentPlayers-" + leagueUrl;
         if (cache.TryGetValue(cacheKey, out List<Player> cachedPlayers))
         {
             if (cachedPlayers.Count > 0)
@@ -279,7 +279,7 @@ public class AtpTourCrawler(DynamicCaching cache)
         var doublePlayers = await GetPlayersFromTournament(drawUrls, "doubles");
         var qualifierPlayers = await GetPlayersFromTournament(drawUrls, "qualifiersingles");
 
-        var players= singlePlayers.Concat(doublePlayers).Concat(qualifierPlayers).Distinct().ToList();
+        var players = singlePlayers.Concat(doublePlayers).Concat(qualifierPlayers).Distinct().ToList();
         cache.SetValue(cacheKey, players, TimeSpan.FromDays(30));
 
         return players;

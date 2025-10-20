@@ -135,7 +135,7 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
 
     private string FormatPlayerNames(List<Player> players, List<string> activeFlags)
     {
-        return string.Join(" / ", players.Select(p =>
+        return string.Join("/", players.Select(p =>
         {
             var flag = "flag-" + p.Nationality.ToLower();
 
