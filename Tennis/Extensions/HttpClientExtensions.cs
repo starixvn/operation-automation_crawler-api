@@ -3,8 +3,6 @@ using Microsoft.Extensions.Caching.InMemory;
 using Microsoft.Extensions.DependencyInjection;
 using System.IO.Compression;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 
 namespace Tennis.Extensions;
