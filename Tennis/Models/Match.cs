@@ -26,6 +26,8 @@ public class Match(string id)
 
     public string Id { get; } = id;
 
+    public string MatchType { get; set; }
+
     public override bool Equals(object obj)
     {
         if (obj is Match other)

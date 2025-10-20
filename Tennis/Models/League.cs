@@ -26,6 +26,8 @@ public class League
 
     public List<string> Players { get; set; } = new();
 
+    public List<string> MatchTypes { get; set; } = [];
+
     public virtual bool Equals(League other)
     {
         return other != null && Source == other.Source;

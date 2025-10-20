@@ -25,10 +25,11 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
                 DateTo = dateTo,
                 Location = tournament.location,
                 Country = tournament.hostNation,
-                Group = tournament.tennisCategoryCode
+                Group = tournament.tennisCategoryCode,
+                Matches = await ParseMatches(activeFlags, tournament),
+                Players = ParsePlayers(activeFlags, tournament),
+                MatchTypes = tournament.matches.Select(m => m.eventDesc).Distinct().ToList()
             };
-            league.Matches = await ParseMatches(activeFlags, tournament);
-            league.Players = ParsePlayers(activeFlags, tournament);
 
             leagues.Add(league);
         }
@@ -78,7 +79,8 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
             Location = "NA",
             Home = FormatPlayerNames(homePlayers, activeFlags),
             Away = FormatPlayerNames(awayPlayers, activeFlags),
-            Source = leagueUrl
+            Source = leagueUrl,
+            MatchType = match.eventDesc
         };
 
         var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.venue);
