@@ -83,7 +83,7 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
             MatchType = match.eventDesc
         };
 
-        var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.venue);
+        var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.venue.Trim());
         result.Country = league.hostNation;
         result.City = league.venue;
 
