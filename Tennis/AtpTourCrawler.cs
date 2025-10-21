@@ -211,14 +211,28 @@ public class AtpTourCrawler(DynamicCaching cache)
 
     private async Task<List<Player>> GetPlayersFromElement(HtmlNode element)
     {
-        var players = new List<Player>();
+        if (element is null)
+        {
+            return [];
+        }
+
         var playerLinks = element.QuerySelectorAll(".name a").ToList();
+
         var flagLinks = element.QuerySelectorAll(".atp-flag use").ToList();
+
+        return await GetPlayerFromOfficialSite(playerLinks, flagLinks);
+    }
+
+    private async Task<List<Player>> GetPlayerFromOfficialSite(List<HtmlNode> playerLinks, List<HtmlNode> flagLinks)
+    {
+
+        var players = new List<Player>();
 
         if (playerLinks.Count != flagLinks.Count)
         {
             return [];
         }
+
         for (var i = 0; i < playerLinks.Count; i++)
         {
             var flagLink = flagLinks[i];

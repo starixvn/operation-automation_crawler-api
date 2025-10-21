@@ -53,7 +53,7 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
     private List<string> ParsePlayers(List<string> activeFlags, ItfTennisLeague tournament)
     {
         var itfPlayersForLeague = tournament.players ?? [];
-        var players =  MapPlayersFromTeam(itfPlayersForLeague);
+        var players = MapPlayersFromTeam(itfPlayersForLeague);
 
         var playerNames = players.Select(p =>
         {
@@ -124,7 +124,7 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
     {
         return teamPlayers
             .Where(p => p != null)
-            .Select(p => new Player(p!.playerId.ToString())
+            .Select(p => new Player(p!.playerId?.ToString() ?? "0")
             {
                 Name = $"{p.givenName} {p.familyName}".Trim(),
                 Nationality = p.nationality,
