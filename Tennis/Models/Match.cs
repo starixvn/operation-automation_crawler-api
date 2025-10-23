@@ -28,6 +28,8 @@ public class Match(string id)
 
     public string MatchType { get; set; }
 
+    public string Round { get; set; }
+
     public override bool Equals(object obj)
     {
         if (obj is Match other)

@@ -41,9 +41,11 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
     {
         var itfMatchesForLeague = tournament.matches ?? [];
         var matches = new List<Match>();
-        foreach (var m in itfMatchesForLeague)
+        for (var index = 0; index < itfMatchesForLeague.Count; index++)
         {
-            var match = await CreateMatch(m, tournament, activeFlags);
+            var previousIndex = index > 0 ? index - 1 : 0;
+            var previousMatch = previousIndex < matches.Count ? matches[previousIndex] : null;
+            var match = await CreateMatch(itfMatchesForLeague[index], tournament, activeFlags, previousMatch);
             matches.Add(match);
         }
 
@@ -64,10 +66,10 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
         return playerNames;
     }
 
-    private async Task<Match> CreateMatch(ItfTennisMatch match, ItfTennisLeague league, List<string> activeFlags)
+    private async Task<Match> CreateMatch(ItfTennisMatch match, ItfTennisLeague league, List<string> activeFlags, Match previousMatch)
     {
         var leagueUrl = $"https://www.itftennis.com{league.tournamentLink}";
-        var matchTime = ParseMatchTime(match.schedule, match.playDate);
+        var matchTime = ParseMatchTime(match.schedule, match.playDate, previousMatch);
 
         var homePlayers = MapPlayersFromTeam(match.homePlayers);
         var awayPlayers = MapPlayersFromTeam(match.awayPlayers);
@@ -80,7 +82,8 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
             Home = FormatPlayerNames(homePlayers, activeFlags),
             Away = FormatPlayerNames(awayPlayers, activeFlags),
             Source = leagueUrl,
-            MatchType = match.eventDesc
+            MatchType = match.eventDesc,
+            Round = match.roundGroupDesc
         };
 
         var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.venue.Trim());
@@ -98,7 +101,7 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
         return result;
     }
 
-    private DateTime ParseMatchTime(string schedule, DateTime date)
+    private DateTime ParseMatchTime(string schedule, DateTime date, Match previousMatch)
     {
         var matchTime = date;
         if (schedule.StartsWith("Starting at "))
@@ -116,6 +119,18 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
             {
                 matchTime = date.Add(time);
             }
+        }
+        else if (schedule.StartsWith("After Rest, Not Before "))
+        {
+            var timeStr = schedule.Replace("After Rest, Not Before ", "");
+            if (TimeSpan.TryParse(timeStr, out var time))
+            {
+                matchTime = date.Add(time);
+            }
+        }
+        else if (schedule.StartsWith("Followed By") && previousMatch is not null)
+        {
+            matchTime = previousMatch.Date.AddHours(1);
         }
         return matchTime;
     }
