@@ -156,27 +156,27 @@ public class AtpTourCrawler(DynamicCaching cache)
 
     private async Task<List<string>> GetDaysOfLeague(string leagueUrl)
     {
-        var response = await Client.GetStringAsync(leagueUrl);
-        var doc = new HtmlDocument();
-        doc.LoadHtml(response);
+        try
+        {
+            var response = await Client.GetStringAsync(leagueUrl);
+            var doc = new HtmlDocument();
+            doc.LoadHtml(response);
 
-        var dropdown = doc.DocumentNode.QuerySelector("#matchDate-filter");
-        var options = dropdown?.SelectNodes(".//option");
-        var days = options?.Select(option => option.GetAttributeValue("value", ""))
-            .Select(d => d.Trim())
-            .Where(d => !string.IsNullOrEmpty(d))
-            .Select(d =>
-            {
-                var date = DateTime.TryParseExact(d, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate)
-                    ? parsedDate
-                    : DateTime.MinValue;
-                return date;
-            })
-            .Where(d => d >= DateTime.Today)
-            .Select(d => d.ToString("yyyy-MM-dd"))
-            .ToList();
+            var dropdown = doc.DocumentNode.QuerySelector("#matchDate-filter");
+            var options = dropdown?.SelectNodes(".//option");
+            var days = options?.Select(option => option.GetAttributeValue("value", ""))
+                .Select(d => d.Trim())
+                .Where(d => !string.IsNullOrEmpty(d))
+                .ToList();
 
-        return days ?? [];
+            return days ?? [];
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"GetDaysOfLeague Exception {e.Message} when get {leagueUrl}");
+        }
+
+        return [];
     }
 
     public async Task<Player> GetPlayer(string url, string country)
@@ -189,24 +189,37 @@ public class AtpTourCrawler(DynamicCaching cache)
         {
             return cachedPlayer;
         }
-
         var apiUrl = $"https://www.atptour.com/en/-/www/players/hero/{id}?v=1";
-        var response = await Client.GetStringAsync(apiUrl);
-
-        var playerResponse = JsonConvert.DeserializeObject<PlayerResponse>(response);
-        var activeFlags = await GetActiveFlags();
-        var nation = activeFlags.Contains(country) ? $" ({playerResponse.NatlId})" : string.Empty;
-        var player = new Player(id)
+        try
         {
-            Name = $"{playerResponse.FirstName} {playerResponse.LastName}{nation}",
-            BirthDay = playerResponse.BirthDate,
-            Nationality = playerResponse.Nationality,
-            Birthplace = playerResponse.BirthCity
+            var response = await Client.GetStringAsync(apiUrl);
+
+            var playerResponse = JsonConvert.DeserializeObject<PlayerResponse>(response);
+            var activeFlags = await GetActiveFlags();
+            var nation = activeFlags.Contains(country) ? $" ({playerResponse.NatlId})" : string.Empty;
+            var player = new Player(id)
+            {
+                Name = $"{playerResponse.FirstName} {playerResponse.LastName}{nation}",
+                BirthDay = playerResponse.BirthDate,
+                Nationality = playerResponse.Nationality,
+                Birthplace = playerResponse.BirthCity
+            };
+            cache.SetValue(playerCacheKey, player, TimeSpan.FromDays(30));
+
+            return player;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Exception when call {apiUrl} and {url}");
+        }
+
+        return new Player(id)
+        {
+            Name = $"Invalid link PlayerUrl: {apiUrl}. Source Url: {url}",
+            BirthDay = DateTime.MinValue,
+            Nationality = "Invalid",
+            Birthplace = "Invalid"
         };
-
-        cache.SetValue(playerCacheKey, player, TimeSpan.FromDays(30));
-
-        return player;
     }
 
     private async Task<List<Player>> GetPlayersFromElement(HtmlNode element)
