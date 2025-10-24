@@ -2,7 +2,6 @@
 using Helper;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
-using System.Globalization;
 using Tennis.Extensions;
 using Tennis.Models;
 using Tennis.Models.AptTourModels;
@@ -108,14 +107,11 @@ public class AtpTourCrawler(DynamicCaching cache)
 
         var schedules = new List<Match>();
         var matchElements = doc.DocumentNode.QuerySelectorAll(".content-group .schedule");
-
+        Match previousMatch = null;
 
         foreach (var matchElement in matchElements)
         {
-            var dateStr = matchElement.GetAttributeValue("data-matchdate", "");
-            var timeStr = matchElement.GetAttributeValue("data-datetime", "");
-            var dateTimeStr = string.IsNullOrEmpty(timeStr) ? dateStr : timeStr;
-            var matchDate = DateTime.Parse(dateTimeStr);
+            var matchDate = ParseMatchTime(matchElement, previousMatch);
 
             // Get location
             var locationElement = matchElement.QuerySelector(".schedule-location-timestamp strong");
@@ -126,6 +122,10 @@ public class AtpTourCrawler(DynamicCaching cache)
                 continue;
             }
 
+            //Get Round
+            var roundElement = matchElement.QuerySelector(".schedule-type");
+            var round = roundElement?.InnerText.Trim() ?? string.Empty;
+
             // Get home and away players
 
             var homeElement = matchElement.QuerySelector(".schedule-players .player");
@@ -134,11 +134,11 @@ public class AtpTourCrawler(DynamicCaching cache)
             var homePlayers = await GetPlayersFromElement(homeElement);
             var awayPlayers = await GetPlayersFromElement(awayElement);
 
-            var matchId = $"{dateTimeStr}-{string.Join('-', homePlayers.Select(p => p.Id))}"
+            var matchId = $"{matchDate}-{string.Join('-', homePlayers.Select(p => p.Id))}"
                           + $"-{string.Join('-', awayPlayers.Select(p => p.Id))}";
-            schedules.Add(new Match(matchId)
+            var match = new Match(matchId)
             {
-                OriginalDate = matchDate.Date,
+                OriginalDate = matchDate,
                 UtcOffset = 0,
                 City = "ATP Tour",
                 Country = "ATP Tour",
@@ -147,11 +147,52 @@ public class AtpTourCrawler(DynamicCaching cache)
                 Home = string.Join("/", homePlayers.Select(p => p.Name)),
                 Away = string.Join("/", awayPlayers.Select(p => p.Name)),
                 Source = leagueUrl,
-                Group = group
-            });
+                Group = group,
+                Round = round
+            };
+
+            schedules.Add(match);
+            previousMatch = match;
         }
 
         return schedules;
+    }
+
+    private DateTime ParseMatchTime(HtmlNode matchElement, Match previousMatch)
+    {
+        var dateStr = matchElement.GetAttributeValue("data-displaytime", "");
+        var matchDate = matchElement.GetAttributeValue("data-matchdate", "");
+        var date = DateTime.Parse(matchDate);
+        var matchTime = date;
+        if (dateStr.StartsWith("Starts At "))
+        {
+            var timeStr = dateStr.Replace("Starts At ", "");
+            if (TimeSpan.TryParse(timeStr, out var time))
+            {
+                matchTime = date.Add(time);
+            }
+        }
+        else if (dateStr.StartsWith("Not Before "))
+        {
+            var timeStr = dateStr.Replace("Not Before ", "");
+            if (TimeSpan.TryParse(timeStr, out var time))
+            {
+                matchTime = date.Add(time);
+            }
+        }
+        else if (dateStr.StartsWith("After Rest, Not Before "))
+        {
+            var timeStr = dateStr.Replace("After Rest, Not Before ", "");
+            if (TimeSpan.TryParse(timeStr, out var time))
+            {
+                matchTime = date.Add(time);
+            }
+        }
+        else if (dateStr.StartsWith("Followed By") && previousMatch is not null)
+        {
+            matchTime = previousMatch.Date.AddHours(1);
+        }
+        return matchTime;
     }
 
     private async Task<List<string>> GetDaysOfLeague(string leagueUrl)
@@ -208,7 +249,7 @@ public class AtpTourCrawler(DynamicCaching cache)
 
             return player;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             Console.WriteLine($"Exception when call {apiUrl} and {url}");
         }
