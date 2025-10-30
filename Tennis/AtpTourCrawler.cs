@@ -117,10 +117,6 @@ public class AtpTourCrawler(DynamicCaching cache)
             var locationElement = matchElement.QuerySelector(".schedule-location-timestamp strong");
             var location = locationElement?.InnerText.Trim() ?? string.Empty;
 
-            if (locationElement == null)
-            {
-                continue;
-            }
 
             //Get Round
             var roundElement = matchElement.QuerySelector(".schedule-type");
@@ -167,30 +163,30 @@ public class AtpTourCrawler(DynamicCaching cache)
         if (dateStr.StartsWith("Starts At "))
         {
             var timeStr = dateStr.Replace("Starts At ", "");
-            if (TimeSpan.TryParse(timeStr, out var time))
+            if (DateTime.TryParse(timeStr, out var time))
             {
-                matchTime = date.Add(time);
+                matchTime = date.Add(time.TimeOfDay);
             }
         }
         else if (dateStr.StartsWith("Not Before "))
         {
             var timeStr = dateStr.Replace("Not Before ", "");
-            if (TimeSpan.TryParse(timeStr, out var time))
+            if (DateTime.TryParse(timeStr, out var time))
             {
-                matchTime = date.Add(time);
+                matchTime = date.Add(time.TimeOfDay);
             }
         }
         else if (dateStr.StartsWith("After Rest, Not Before "))
         {
             var timeStr = dateStr.Replace("After Rest, Not Before ", "");
-            if (TimeSpan.TryParse(timeStr, out var time))
+            if (DateTime.TryParse(timeStr, out var time))
             {
-                matchTime = date.Add(time);
+                matchTime = date.Add(time.TimeOfDay);
             }
         }
         else if (dateStr.StartsWith("Followed By") && previousMatch is not null)
         {
-            matchTime = previousMatch.Date.AddHours(1);
+            matchTime = previousMatch.OriginalDate.AddHours(1);
         }
         return matchTime;
     }

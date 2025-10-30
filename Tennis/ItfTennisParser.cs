@@ -93,6 +93,7 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
         if (timeIsModel != null)
         {
             result.UtcOffset = timeIsModel.UtcOffset;
+            result.OriginalDate = matchTime;
             result.Date = matchTime.AddHours(-result.UtcOffset + 8);
             result.UtcCity = timeIsModel.Location;
             result.Group = league.tennisCategoryCode;
@@ -130,7 +131,7 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
         }
         else if (schedule.StartsWith("Followed By") && previousMatch is not null)
         {
-            matchTime = previousMatch.Date.AddHours(1);
+            matchTime = previousMatch.OriginalDate.AddHours(1);
         }
         return matchTime;
     }
