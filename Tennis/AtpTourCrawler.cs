@@ -8,7 +8,7 @@ using Tennis.Models.AptTourModels;
 
 namespace Tennis;
 
-public class AtpTourCrawler(DynamicCaching cache)
+public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
 {
     private const string ActiveFlagsCacheKey = "ActiveFlags";
     private static readonly HttpClient Client = HttpClientExtensions.CreateAtpTourHttpClient();
@@ -79,14 +79,14 @@ public class AtpTourCrawler(DynamicCaching cache)
         var days = await GetDaysOfLeague(league.ScheduleUrl);
         if (days.Count == 0)
         {
-            return await GetMatches(league.ScheduleUrl, string.Empty, league.Group);
+            return await GetMatches(league, string.Empty, league.Group);
         }
         else
         {
             var result = new List<Match>();
             foreach (var day in days)
             {
-                var matches = await GetMatches(league.ScheduleUrl, day, league.Group);
+                var matches = await GetMatches(league, day, league.Group);
                 result.AddRange(matches);
             }
 
@@ -94,8 +94,9 @@ public class AtpTourCrawler(DynamicCaching cache)
         }
     }
 
-    private async Task<List<Match>> GetMatches(string leagueUrl, string day, string group)
+    private async Task<List<Match>> GetMatches(League league, string day, string group)
     {
+        var leagueUrl = league.ScheduleUrl;
         if (!string.IsNullOrEmpty(day))
         {
             leagueUrl += $"?day={day}";
@@ -132,12 +133,14 @@ public class AtpTourCrawler(DynamicCaching cache)
 
             var matchId = $"{matchDate}-{string.Join('-', homePlayers.Select(p => p.Id))}"
                           + $"-{string.Join('-', awayPlayers.Select(p => p.Id))}";
+            var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.Location);
             var match = new Match(matchId)
             {
                 OriginalDate = matchDate,
-                UtcOffset = 0,
-                City = "ATP Tour",
-                Country = "ATP Tour",
+                UtcOffset = timeIsModel?.UtcOffset ?? 0,
+                UtcCity = timeIsModel?.Location ?? "",
+                City = league.Location,
+                Country = league.Country,
                 Date = matchDate.AddHours(8),
                 Location = location,
                 Home = string.Join("/", homePlayers.Select(p => p.Name)),
