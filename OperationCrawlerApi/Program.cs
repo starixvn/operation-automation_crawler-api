@@ -10,11 +10,12 @@ var configuration = builder.Configuration;
 // Add services to the container.
 
 services.AddHealthChecks();
-services.CreateTimeIsHttpClient();
-services.CreateN8nHttpClient();
+services.AddTimeIsHttpClient();
+services.AddN8nHttpClient();
 services.AddTransient<ItfTennisParser>();
 services.AddTransient<DynamicCaching>();
 services.AddTransient<AtpTourCrawler>();
+
 
 // Register memory cache
 services.AddMemoryCache();

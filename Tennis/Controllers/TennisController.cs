@@ -1,12 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Tennis.Models.ItfTennisModels;
+using Tennis.Models.LiveTennis;
 
 namespace Tennis.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
 
-public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisParser itfTennisParser, TriggerN8NWorkflow triggerWorkflow) : ControllerBase
+public class TennisController(
+    AtpTourCrawler atpTourCrawler,
+    ItfTennisParser itfTennisParser,
+    TriggerN8NWorkflow triggerWorkflow) : ControllerBase
 {
     /// <summary>
     /// </summary>
@@ -43,6 +47,13 @@ public class TennisController(AtpTourCrawler atpTourCrawler, ItfTennisParser itf
         var models = await itfTennisParser.Parse(tournaments, activeFlags);
         await triggerWorkflow.CallWorkFlowForITF(models);
         return Ok(models);
+    }
+
+    [HttpPost]
+    [Route("live-tennis")]
+    public IActionResult LiveTennis(List<LiveTennisPlayer> players)
+    {
+        return Ok(players);
     }
 
 }
