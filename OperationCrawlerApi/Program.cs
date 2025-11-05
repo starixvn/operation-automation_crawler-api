@@ -20,6 +20,7 @@ services.AddTransient<AtpTourCrawler>();
 // Register memory cache
 services.AddMemoryCache();
 services.AddRedisCache(configuration.GetSection("FanexCachingRedis"));
+services.AddMySqlDatabase(configuration);
 services.AddControllers();
 
 // Configure Swagger/OpenAPI

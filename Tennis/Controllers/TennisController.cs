@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Tennis.Models.ItfTennisModels;
 using Tennis.Models.LiveTennis;
+using Tennis.Storage;
 
 namespace Tennis.Controllers;
 
@@ -10,7 +12,9 @@ namespace Tennis.Controllers;
 public class TennisController(
     AtpTourCrawler atpTourCrawler,
     ItfTennisParser itfTennisParser,
-    TriggerN8NWorkflow triggerWorkflow) : ControllerBase
+    TriggerN8NWorkflow triggerWorkflow,
+    OperationCrawlerDbContext dbContext
+    ) : ControllerBase
 {
     /// <summary>
     /// </summary>
@@ -51,9 +55,34 @@ public class TennisController(
 
     [HttpPost]
     [Route("live-tennis")]
-    public IActionResult LiveTennis(List<LiveTennisPlayer> players)
+    public async Task<IActionResult> LiveTennis(List<LiveTennisPlayer> players)
     {
-        return Ok(players);
+        var existingIds = await dbContext.LiveTennisPlayers
+            .Where(p => players.Select(np => np.id).Contains(p.id))
+            .Select(p => p.id)
+            .ToListAsync();
+
+        var playersToAdd = players
+            .Where(p => !existingIds.Contains(p.id))
+            .ToList();
+
+        var playersToUpdate = players
+            .Where(p => existingIds.Contains(p.id))
+            .ToList();
+
+        if (playersToAdd.Any())
+        {
+            await dbContext.LiveTennisPlayers.AddRangeAsync(playersToAdd);
+            await dbContext.SaveChangesAsync();
+        }
+
+        if (playersToUpdate.Any())
+        {
+            dbContext.LiveTennisPlayers.UpdateRange(playersToUpdate);
+            await dbContext.SaveChangesAsync();
+        }
+
+        return Ok(playersToAdd);
     }
 
 }
