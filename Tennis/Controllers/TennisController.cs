@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Tennis.Models;
 using Tennis.Models.ItfTennisModels;
 using Tennis.Models.LiveTennis;
 using Tennis.Storage;
@@ -13,12 +13,9 @@ public class TennisController(
     AtpTourCrawler atpTourCrawler,
     ItfTennisParser itfTennisParser,
     TriggerN8NWorkflow triggerWorkflow,
-    OperationCrawlerDbContext dbContext
+    DataService dataService
     ) : ControllerBase
 {
-    /// <summary>
-    /// </summary>
-    /// <returns></returns>
     [HttpGet]
     [Route("atp-tour")]
     public async Task<IActionResult> AtpTour()
@@ -57,32 +54,33 @@ public class TennisController(
     [Route("live-tennis")]
     public async Task<IActionResult> LiveTennis(List<LiveTennisPlayer> players)
     {
-        var existingIds = await dbContext.LiveTennisPlayers
-            .Where(p => players.Select(np => np.id).Contains(p.id))
-            .Select(p => p.id)
-            .ToListAsync();
+        var playersToAdd = await dataService.UpdateLiveTennis(players);
+        return Ok(playersToAdd);
+    }
 
-        var playersToAdd = players
-            .Where(p => !existingIds.Contains(p.id))
-            .ToList();
+    [HttpPost]
+    [Route("soccer-7m")]
+    public async Task<IActionResult> Soccer(List<Soccer7m> players)
+    {
+        var playersToAdd = await dataService.UpdateSoccer7m(players);
+        return Ok(playersToAdd);
+    }
 
-        var playersToUpdate = players
-            .Where(p => existingIds.Contains(p.id))
-            .ToList();
-
-        if (playersToAdd.Any())
-        {
-            await dbContext.LiveTennisPlayers.AddRangeAsync(playersToAdd);
-            await dbContext.SaveChangesAsync();
-        }
-
-        if (playersToUpdate.Any())
-        {
-            dbContext.LiveTennisPlayers.UpdateRange(playersToUpdate);
-            await dbContext.SaveChangesAsync();
-        }
+    [HttpPost]
+    [Route("basketball-7m")]
+    public async Task<IActionResult> Basketball(List<Basketball7m> players)
+    {
+        var playersToAdd = await dataService.UpdateBasketball7m(players);
 
         return Ok(playersToAdd);
     }
 
+    [HttpPost]
+    [Route("badminton")]
+    public async Task<IActionResult> Badminton(List<Badminton> players)
+    {
+        var playersToAdd = await dataService.UpdateBadminton(players);
+
+        return Ok(playersToAdd);
+    }
 }

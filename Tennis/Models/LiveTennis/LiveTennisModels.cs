@@ -4,12 +4,8 @@
     {
         public string id { get; init; } = "";
         
-        public string url { get; init; } = "";
-        
-        public string name { get; init; }
+        public string english_name { get; init; }
 
-        public string chinese_name { get; init; } = "";
-
-        public string country { get; init; } = "";
+        public string simplified_name { get; init; } = "";
     }
 }

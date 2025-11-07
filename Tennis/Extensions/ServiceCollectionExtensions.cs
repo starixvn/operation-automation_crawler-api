@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Tennis.Storage;
 
 namespace Tennis.Extensions;
@@ -15,7 +16,7 @@ public static class ServiceCollectionExtensions
             options.UseMySql(
                 connectionString,
                 ServerVersion.AutoDetect(connectionString)
-            )
+            ).LogTo(Console.WriteLine, LogLevel.Information)
         );
         return services;
     }

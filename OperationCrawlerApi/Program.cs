@@ -3,6 +3,7 @@ using Helper;
 using Microsoft.OpenApi.Models;
 using Tennis;
 using Tennis.Extensions;
+using Tennis.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -15,7 +16,7 @@ services.AddN8nHttpClient();
 services.AddTransient<ItfTennisParser>();
 services.AddTransient<DynamicCaching>();
 services.AddTransient<AtpTourCrawler>();
-
+services.AddTransient<DataService>();
 
 // Register memory cache
 services.AddMemoryCache();
