@@ -42,7 +42,6 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
         modelBuilder.Entity<Basketball7m>()
             .HasKey(s => s.id);
 
-        
         modelBuilder.Entity<Basketball7m>().ToTable("basketball_7m");
     }
 
@@ -53,7 +52,6 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
 
         modelBuilder.Entity<Badminton>().ToTable("badminton");
     }
-
 
     private static void ConfigureLiveTennis(ModelBuilder modelBuilder)
     {

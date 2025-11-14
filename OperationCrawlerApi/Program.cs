@@ -3,6 +3,8 @@ using Helper;
 using Microsoft.OpenApi.Models;
 using Tennis;
 using Tennis.Extensions;
+using Tennis.Repositories;
+using Tennis.Services;
 using Tennis.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +19,8 @@ services.AddTransient<ItfTennisParser>();
 services.AddTransient<DynamicCaching>();
 services.AddTransient<AtpTourCrawler>();
 services.AddTransient<DataService>();
+services.AddScoped<CheckTeamNameService, CheckTeamNameServiceImp>();
+services.AddScoped<TeamRepository, TeamRepositoryImp>();
 
 // Register memory cache
 services.AddMemoryCache();
