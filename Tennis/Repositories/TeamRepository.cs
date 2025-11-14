@@ -1,4 +1,5 @@
 ﻿#nullable enable
+
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
@@ -20,22 +21,26 @@ public class TeamRepositoryImp(IConfiguration config) : TeamRepository
         var sql = sportTypeId switch
         {
             1 => """
-                  SELECT simplified_name AS TeamNameSc2, english_name AS TeamName, traditional_name AS TeamNameCn
+                  SELECT simplified_name AS TeamNameSc2, english_name AS TeamName, traditional_name AS TeamNameCn,
+                        @sportTypeId AS SportTypeId
                   FROM soccer_7m
                   WHERE english_name = @name LIMIT 1
                   """,
             2 => """
-                  SELECT simplified_name AS TeamNameSc2, english_name AS TeamName, traditional_name AS TeamNameCn
+                  SELECT simplified_name AS TeamNameSc2, english_name AS TeamName, traditional_name AS TeamNameCn,
+                        @sportTypeId AS SportTypeId
                   FROM basketball_7m
                   WHERE english_name = @name LIMIT 1
                   """,
             5 => """
-                  SELECT simplified_name AS TeamNameSc2, english_name AS TeamName
+                  SELECT simplified_name AS TeamNameSc2, english_name AS TeamName,
+                        @sportTypeId AS SportTypeId
                   FROM live_tennis
                   WHERE english_name = @name LIMIT 1
                   """,
             9 => """
-                  SELECT simplified_name AS TeamNameSc2, english_name AS TeamName
+                  SELECT simplified_name AS TeamNameSc2, english_name AS TeamName,
+                        @sportTypeId AS SportTypeId
                   FROM badminton
                   WHERE english_name = @name LIMIT 1
                   """,
@@ -44,6 +49,6 @@ public class TeamRepositoryImp(IConfiguration config) : TeamRepository
 
         await using var connection = GetConnection();
 
-        return await connection.QueryFirstOrDefaultAsync<TeamModel>(sql, new { name });
+        return await connection.QueryFirstOrDefaultAsync<TeamModel>(sql, new { name, sportTypeId });
     }
 }
