@@ -27,6 +27,7 @@ services.AddMemoryCache();
 services.AddRedisCache(configuration.GetSection("FanexCachingRedis"));
 services.AddMySqlDatabase(configuration);
 services.AddControllers();
+services.AddRazorPages();
 
 // Configure Swagger/OpenAPI
 services.AddEndpointsApiExplorer();
@@ -50,6 +51,7 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty; // Serve Swagger UI at the root URL
 });
 
+app.MapRazorPages();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
 

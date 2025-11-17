@@ -2,7 +2,7 @@
 
 public class Badminton
 {
-    public string id { get; set; } = "";
+    public int id { get; set; } = 0;
 
     public string simplified_name { get; set; } = "";
 
