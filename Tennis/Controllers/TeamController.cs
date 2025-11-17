@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Tennis.Models;
+using Tennis.Models.TeamModels;
 using Tennis.Services;
 
 namespace Tennis.Controllers;
