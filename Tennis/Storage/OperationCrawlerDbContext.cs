@@ -18,6 +18,9 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
 
     public DbSet<AdminTeam> AdminTeam { get; set; }
 
+
+    public DbSet<CountryCode> CountryCodes { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -27,6 +30,7 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
         ConfigureBadminton(modelBuilder);
         ConfigureLiveTennis(modelBuilder);
         ConfigureAdminTeam(modelBuilder);
+        ConfigureCountryCode(modelBuilder);
     }
 
     private static void ConfigureSoccer7m(ModelBuilder modelBuilder)
@@ -76,6 +80,14 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
             .ValueGeneratedOnAdd();
 
         modelBuilder.Entity<AdminTeam>().ToTable("admin_teams");
+    }
+
+    private static void ConfigureCountryCode(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<CountryCode>()
+            .HasKey(c => c.Id);
+
+        modelBuilder.Entity<CountryCode>().ToTable("country_code");
     }
 }
 

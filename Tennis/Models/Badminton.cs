@@ -1,6 +1,6 @@
 ﻿namespace Tennis.Models;
 
-public class Badminton
+public class Badminton: IHasEnglishName
 {
     public int id { get; set; } = 0;
 

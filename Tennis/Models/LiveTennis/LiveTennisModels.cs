@@ -1,11 +1,11 @@
 ﻿namespace Tennis.Models.LiveTennis
 {
-    public record LiveTennisPlayer
+    public class LiveTennisPlayer: IHasEnglishName
     {
-        public string id { get; init; } = "";
+        public string id { get; set; } = "";
         
-        public string english_name { get; init; }
+        public string english_name { get; set; }
 
-        public string simplified_name { get; init; } = "";
+        public string simplified_name { get; set; } = "";
     }
 }

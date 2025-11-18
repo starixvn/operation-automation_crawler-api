@@ -1,6 +1,10 @@
 ﻿namespace Tennis.Models;
+public interface IHasEnglishName
+{
+    string english_name { get; set; }
+}
 
-public class Soccer7m
+public class Soccer7m: IHasEnglishName
 {
     public int id { get; set; }
 
@@ -12,7 +16,7 @@ public class Soccer7m
 }
 
 
-public class Basketball7m
+public class Basketball7m: IHasEnglishName
 {
     public int id { get; set; }
 
