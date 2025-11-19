@@ -7,6 +7,7 @@ using Tennis.Storage;
 using Translator.Extensions;
 using Translator.Repositories;
 using Translator.Services;
+using Translator.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -20,6 +21,7 @@ services.AddTransient<ItfTennisParser>();
 services.AddTransient<DynamicCaching>();
 services.AddTransient<AtpTourCrawler>();
 services.AddTransient<TennisDataService>();
+services.AddTransient<DataService>();
 services.AddScoped<CheckTeamNameService, CheckTeamNameServiceImp>();
 services.AddScoped<TeamRepository, TeamRepositoryImp>();
 
