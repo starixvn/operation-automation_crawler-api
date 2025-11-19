@@ -1,9 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using Tennis.Models;
-using Tennis.Models.LiveTennis;
+using Translator.Models;
+using Translator.Models.LiveTennis;
 
-namespace Tennis.Storage;
+namespace Translator.Storage;
 
 public class DataService(OperationCrawlerDbContext dbContext)
 {

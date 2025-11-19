@@ -8,11 +8,11 @@ namespace Tennis.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddMySqlDatabase(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddTennisMySqlDatabase(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("OperationCrawlerDatabase");
+        var connectionString = configuration.GetConnectionString("TennisDatabase");
 
-        services.AddDbContext<OperationCrawlerDbContext>(options =>
+        services.AddDbContext<TennisDbContext>(options =>
             options.UseMySql(
                 connectionString,
                 ServerVersion.AutoDetect(connectionString)

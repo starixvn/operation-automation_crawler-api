@@ -3,9 +3,10 @@ using Helper;
 using Microsoft.OpenApi.Models;
 using Tennis;
 using Tennis.Extensions;
-using Tennis.Repositories;
-using Tennis.Services;
 using Tennis.Storage;
+using Translator.Extensions;
+using Translator.Repositories;
+using Translator.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -14,18 +15,19 @@ var configuration = builder.Configuration;
 
 services.AddHealthChecks();
 services.AddTimeIsHttpClient();
-services.AddN8nHttpClient();
+services.AddN8NHttpClient();
 services.AddTransient<ItfTennisParser>();
 services.AddTransient<DynamicCaching>();
 services.AddTransient<AtpTourCrawler>();
-services.AddTransient<DataService>();
+services.AddTransient<TennisDataService>();
 services.AddScoped<CheckTeamNameService, CheckTeamNameServiceImp>();
 services.AddScoped<TeamRepository, TeamRepositoryImp>();
 
 // Register memory cache
 services.AddMemoryCache();
 services.AddRedisCache(configuration.GetSection("FanexCachingRedis"));
-services.AddMySqlDatabase(configuration);
+services.AddTranslatorMySqlDatabase(configuration);
+services.AddTennisMySqlDatabase(configuration);
 services.AddControllers();
 services.AddRazorPages();
 

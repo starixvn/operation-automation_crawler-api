@@ -28,7 +28,7 @@ public static class HttpClientExtensions
         return client;
     }
 
-    public static IHttpClientBuilder AddN8nHttpClient(this IServiceCollection services)
+    public static IHttpClientBuilder AddN8NHttpClient(this IServiceCollection services)
     {
         return services.AddHttpClient<TriggerN8NWorkflow>();
     }

@@ -1,4 +1,4 @@
-﻿namespace Tennis.Models.TeamModels;
+﻿namespace Translator.Models.TeamModels;
 
 public class ContentModel
 {

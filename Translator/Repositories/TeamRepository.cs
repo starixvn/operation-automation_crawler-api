@@ -1,11 +1,9 @@
-﻿#nullable enable
-
-using Dapper;
+﻿using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
-using Tennis.Models.TeamModels;
+using Translator.Models.TeamModels;
 
-namespace Tennis.Repositories;
+namespace Translator.Repositories;
 
 public interface TeamRepository
 {

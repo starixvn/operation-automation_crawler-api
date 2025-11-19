@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Helper\Helper.csproj" />
     <ProjectReference Include="..\Tennis\Tennis.csproj" />
+    <ProjectReference Include="..\Translator\Translator.csproj" />
         
   </ItemGroup>
 

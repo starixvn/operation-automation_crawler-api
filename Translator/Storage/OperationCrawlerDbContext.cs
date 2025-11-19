@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using Tennis.Models;
-using Tennis.Models.LiveTennis;
+using Translator.Models;
+using Translator.Models.LiveTennis;
 
-namespace Tennis.Storage;
+namespace Translator.Storage;
 
 public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContext> options) : DbContext(options)
 {
@@ -16,9 +16,6 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
 
     public DbSet<Badminton> Badminton { get; set; }
 
-    public DbSet<AdminTeam> AdminTeam { get; set; }
-
-
     public DbSet<CountryCode> CountryCodes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,7 +26,6 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
         ConfigureBasketball7m(modelBuilder);
         ConfigureBadminton(modelBuilder);
         ConfigureLiveTennis(modelBuilder);
-        ConfigureAdminTeam(modelBuilder);
         ConfigureCountryCode(modelBuilder);
     }
 
@@ -69,47 +65,11 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
         modelBuilder.Entity<LiveTennisPlayer>().ToTable("live_tennis");
     }
 
-    private static void ConfigureAdminTeam(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<AdminTeam>()
-            .HasKey(p => p.id);
-
-        modelBuilder.Entity<AdminTeam>()
-            .Property(p => p.id)
-            .HasColumnType("int")
-            .ValueGeneratedOnAdd();
-
-        modelBuilder.Entity<AdminTeam>().ToTable("admin_teams");
-    }
-
     private static void ConfigureCountryCode(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CountryCode>()
             .HasKey(c => c.Id);
 
         modelBuilder.Entity<CountryCode>().ToTable("country_code");
-    }
-}
-
-public class OperationCrawlerDbContextFactory : IDesignTimeDbContextFactory<OperationCrawlerDbContext>
-{
-    public OperationCrawlerDbContext CreateDbContext(string[] args)
-    {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        var connectionString = configuration.GetConnectionString("OperationCrawlerDatabase");
-
-        var optionsBuilder = new DbContextOptionsBuilder<OperationCrawlerDbContext>();
-
-        optionsBuilder.UseMySql(
-            connectionString,
-            ServerVersion.AutoDetect(connectionString),
-            options => options.MigrationsAssembly(typeof(OperationCrawlerDbContext).Assembly.FullName)
-        );
-
-        return new OperationCrawlerDbContext(optionsBuilder.Options);
     }
 }

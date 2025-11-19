@@ -1,4 +1,4 @@
-﻿namespace Tennis.Models;
+﻿namespace Translator.Models;
 public interface IHasEnglishName
 {
     string english_name { get; set; }

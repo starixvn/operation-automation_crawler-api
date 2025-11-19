@@ -1,8 +1,8 @@
 ﻿using System.Text.RegularExpressions;
-using Tennis.Models.TeamModels;
-using Tennis.Repositories;
+using Translator.Models.TeamModels;
+using Translator.Repositories;
 
-namespace Tennis.Services;
+namespace Translator.Services;
 
 public interface CheckTeamNameService
 {

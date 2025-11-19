@@ -1,4 +1,4 @@
-﻿namespace Tennis.Models;
+﻿namespace Translator.Models;
 
 public class Badminton: IHasEnglishName
 {

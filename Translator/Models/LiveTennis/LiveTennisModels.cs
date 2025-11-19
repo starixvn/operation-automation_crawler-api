@@ -1,4 +1,4 @@
-﻿namespace Tennis.Models.LiveTennis
+﻿namespace Translator.Models.LiveTennis
 {
     public class LiveTennisPlayer: IHasEnglishName
     {

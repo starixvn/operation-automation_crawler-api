@@ -105,7 +105,7 @@
     @if (Model.Message != null)
     {
         <div class="message @(Model.IsSuccess ? "success" : "error")">
-            @Html.Raw(@Model.Message)
+            @Html.Raw(Model.Message)
         </div>
     }
 

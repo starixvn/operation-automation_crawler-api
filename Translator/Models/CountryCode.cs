@@ -1,7 +1,7 @@
-﻿namespace Tennis.Models;
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Translator.Models;
 
 [Table("country_code")]
 public class CountryCode

@@ -7,8 +7,6 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
-		<PackageReference Include="CsvHelper" Version="33.1.0" />
-		<PackageReference Include="Dapper" Version="2.1.66" />
 		<PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
 		<PackageReference Include="Fanex.Caching.Redis" Version="2.2.8" />
 		<PackageReference Include="Fizzler.Systems.HtmlAgilityPack" Version="1.2.1" />
@@ -19,9 +17,7 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.10" />
-		<PackageReference Include="Microsoft.Playwright" Version="1.55.0" />
-		<PackageReference Include="MySql.Data" Version="9.5.0" />
+		
 		
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 		
