@@ -15,21 +15,15 @@ var configuration = builder.Configuration;
 // Add services to the container.
 
 services.AddHealthChecks();
-services.AddTimeIsHttpClient();
-services.AddN8NHttpClient();
-services.AddTransient<ItfTennisParser>();
-services.AddTransient<DynamicCaching>();
-services.AddTransient<AtpTourCrawler>();
-services.AddTransient<TennisDataService>();
 services.AddTransient<DataService>();
-services.AddScoped<CheckTeamNameService, CheckTeamNameServiceImp>();
-services.AddScoped<TeamRepository, TeamRepositoryImp>();
 
 // Register memory cache
 services.AddMemoryCache();
 services.AddRedisCache(configuration.GetSection("FanexCachingRedis"));
-services.AddTranslatorMySqlDatabase(configuration);
-services.AddTennisMySqlDatabase(configuration);
+
+services.AddTennisService(configuration);
+services.AddTranslatorService(configuration);
+
 services.AddControllers();
 services.AddRazorPages();
 

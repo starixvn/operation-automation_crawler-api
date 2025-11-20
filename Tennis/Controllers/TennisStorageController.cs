@@ -8,11 +8,11 @@ namespace Tennis.Controllers;
 
 public class TennisStorageController(TennisDbContext dbContext) : ControllerBase
 {
-    [HttpGet]
+    [HttpPost]
     [Route("create-league")]
     public async Task<IActionResult> CreateLeague(TennisLeague league)
     {
-        league.CreatedDate = DateTime.Now;
+        league.UpdatedDate = DateTime.Now;
         await dbContext.TennisLeagues.AddAsync(league);
         await dbContext.SaveChangesAsync();
 
@@ -23,7 +23,7 @@ public class TennisStorageController(TennisDbContext dbContext) : ControllerBase
     [Route("create-match")]
     public async Task<IActionResult> CreateMatch(TennisMatch match)
     {
-        match.CreatedDate = DateTime.Now;
+        match.UpdatedDate = DateTime.Now;
         await dbContext.TennisMatches.AddAsync(match);
         await dbContext.SaveChangesAsync();
 

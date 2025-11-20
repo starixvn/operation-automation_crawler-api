@@ -13,6 +13,34 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
     private const string ActiveFlagsCacheKey = "ActiveFlags";
     private static readonly HttpClient Client = HttpClientExtensions.CreateAtpTourHttpClient();
 
+    public async Task<List<League>> CrawlAll()
+    {
+        var leagues = await GetLeagues();
+        leagues = leagues.Where(m => m.DateFrom <= DateTime.Today.AddDays(10))
+            .Where(m => m.DateTo >= DateTime.Today.AddDays(-1))
+            .Distinct()
+            .ToList();
+        foreach (var league in leagues)
+        {
+            var matches = await GetMatches(league);
+            Console.WriteLine($"Found {matches.Count} matches for league {league.ScheduleUrl}");
+            matches = matches.Where(m => !string.IsNullOrEmpty(m.Home) || !string.IsNullOrEmpty(m.Away))
+                .ToList();
+
+            var homePlayers = matches.Select(m => m.Home);
+            var awayPlayers = matches.Select(m => m.Away);
+            var players = homePlayers.Union(awayPlayers);
+
+            var allPlayers = league.Players.Union(players)
+                .Distinct().ToList();
+
+            league.Players = allPlayers;
+            league.Matches = matches;
+        }
+
+        return leagues;
+    }
+
     public async Task<List<League>> GetLeagues()
     {
         const string tourUrl = "https://www.atptour.com/en/-/tournaments/calendar/tour";
@@ -54,7 +82,7 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
                 {
                     Source = leagueUrl,
                     Name = tournament.Name,
-                    Id = tournament.Id,
+                    Id = $"{tournament.Id}",
                     Date = tournament.FormattedDate,
                     DateFrom = dateFrom,
                     DateTo = dateTo,
@@ -75,7 +103,7 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
         {
             return [];
         }
-
+        
         var days = await GetDaysOfLeague(league.ScheduleUrl);
         if (days.Count == 0)
         {
@@ -97,6 +125,7 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
     private async Task<List<Match>> GetMatches(League league, string day, string group)
     {
         var leagueUrl = league.ScheduleUrl;
+        
         if (!string.IsNullOrEmpty(day))
         {
             leagueUrl += $"?day={day}";
@@ -130,9 +159,9 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
 
             var homePlayers = await GetPlayersFromElement(homeElement);
             var awayPlayers = await GetPlayersFromElement(awayElement);
-
-            var matchId = $"{matchDate}-{string.Join('-', homePlayers.Select(p => p.Id))}"
-                          + $"-{string.Join('-', awayPlayers.Select(p => p.Id))}";
+            var homePlayerIds = string.Join('-', homePlayers.Select(p => p.Id));
+            var awayPlayerIds = string.Join('-', awayPlayers.Select(p => p.Id));
+            var matchId = $"{league.Id}-{homePlayerIds}-{awayPlayerIds}-{round}";
             var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.Location);
             var match = new Match(matchId)
             {

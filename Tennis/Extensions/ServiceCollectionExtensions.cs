@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Helper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,19 @@ public static class ServiceCollectionExtensions
                 ServerVersion.AutoDetect(connectionString)
             ).LogTo(Console.WriteLine, LogLevel.Information)
         );
+        return services;
+    }
+
+    public static IServiceCollection AddTennisService(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddN8NHttpClient();
+        services.AddTimeIsHttpClient();
+        services.AddTransient<ItfTennisParser>();
+        services.AddTransient<DynamicCaching>();
+        services.AddTransient<AtpTourCrawler>();
+        services.AddTransient<TennisDataService>();
+        services.AddTennisMySqlDatabase(configuration);
+
         return services;
     }
 }

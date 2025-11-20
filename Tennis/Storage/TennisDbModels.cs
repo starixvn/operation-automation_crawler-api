@@ -19,10 +19,8 @@ public class TennisLeague
     [StringLength(4000)]
     public string OriginalUrl { get; set; }
 
-    [Column("created_date")]
-    public DateTime? CreatedDate { get; set; }
-
-    public ICollection<TennisMatch> Matches { get; set; } = new List<TennisMatch>();
+    [Column("updated_date")]
+    public DateTime UpdatedDate { get; set; }
 }
 
 public class TennisMatch
@@ -47,8 +45,6 @@ public class TennisMatch
     [Column("kickoff_time")] 
     public DateTime KickoffTime { get; set; } = DateTime.MaxValue;
 
-    [Column("created_date")] 
-    public DateTime CreatedDate { get; set; } = DateTime.Now;
-
-    public TennisLeague League { get; set; } = null!;
+    [Column("updated_date")] 
+    public DateTime UpdatedDate { get; set; } = DateTime.Now;
 }
