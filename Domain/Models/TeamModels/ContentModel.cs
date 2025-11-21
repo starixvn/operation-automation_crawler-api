@@ -1,4 +1,4 @@
-﻿namespace Translator.Models.TeamModels;
+﻿namespace Domain.Models.TeamModels;
 
 public class ContentModel
 {

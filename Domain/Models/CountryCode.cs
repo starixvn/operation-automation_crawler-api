@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Translator.Models;
+namespace Domain.Models;
 
 [Table("country_code")]
 public class CountryCode
@@ -12,7 +12,7 @@ public class CountryCode
     public int Id { get; set; }
 
     [Column("english_name")]
-    [StringLength(100)] 
+    [StringLength(100)]
     public string EnglishName { get; set; }
 
     [Column("country_name")]

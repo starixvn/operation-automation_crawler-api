@@ -1,7 +1,7 @@
 ﻿using Dapper;
+using Domain.Models.TeamModels;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
-using Translator.Models.TeamModels;
 
 namespace Translator.Repositories;
 

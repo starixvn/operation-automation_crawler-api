@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Translator.Models;
-using Translator.Models.LiveTennis;
+﻿using Domain.Data;
+using Domain.Models;
+using Domain.Models.LiveTennis;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace Translator.Storage;
 
@@ -99,7 +101,7 @@ public class DataService(OperationCrawlerDbContext dbContext)
         return playersToAdd;
     }
 
-    private async Task RemoveCountryCodeFromName<T>(List<T> players) where T:class, IHasEnglishName
+    private async Task RemoveCountryCodeFromName<T>(List<T> players) where T : class, IHasEnglishName
     {
         var countries = await dbContext.CountryCodes.Select(c => $"({c.EnglishName})").ToListAsync();
 

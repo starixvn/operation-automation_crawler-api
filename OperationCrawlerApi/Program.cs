@@ -1,15 +1,11 @@
+using Domain;
 using Fanex.Caching.Redis;
-using Helper;
 using Microsoft.OpenApi.Models;
-using Tennis;
 using Tennis.Extensions;
-using Tennis.Storage;
-using Translator.Extensions;
-using Translator.Repositories;
 using TennisWorker.Services;
-using TennisLiveMatchesWorker = TennisWorker.TennisWorker;
-using Translator.Services;
+using Translator.Extensions;
 using Translator.Storage;
+using TennisLiveMatchesWorker = TennisWorker.TennisWorker;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -23,6 +19,7 @@ services.AddSingleton<IFetchScoreService, FetchScoreService>();
 services.AddSingleton<IScoreProcessing, ScoreProcessing>();
 services.AddHostedService<TennisLiveMatchesWorker>();
 services.AddHttpClient();
+services.AddMySqlDatabase(configuration);
 
 // Register memory cache
 services.AddMemoryCache();

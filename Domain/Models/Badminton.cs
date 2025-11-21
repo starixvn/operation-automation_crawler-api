@@ -1,6 +1,6 @@
-﻿namespace Translator.Models;
+﻿namespace Domain.Models;
 
-public class Badminton: IHasEnglishName
+public class Badminton : IHasEnglishName
 {
     public int id { get; set; } = 0;
 

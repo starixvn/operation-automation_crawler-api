@@ -1,5 +1,5 @@
-﻿using System.Text.RegularExpressions;
-using Translator.Models.TeamModels;
+﻿using Domain.Models.TeamModels;
+using System.Text.RegularExpressions;
 using Translator.Repositories;
 
 namespace Translator.Services;

@@ -1,12 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration;
-using Translator.Models;
-using Translator.Models.LiveTennis;
-using Tennis.Models;
-using Tennis.Models.LiveTennis;
+﻿using Domain.Models;
+using Domain.Models.LiveTennis;
+using Microsoft.EntityFrameworkCore;
 
-namespace Translator.Storage;
+
+namespace Domain.Data;
 
 public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContext> options) : DbContext(options)
 {

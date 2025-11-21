@@ -1,7 +1,7 @@
+using Domain.Models;
+using Domain.Models.LiveTennis;
+using Domain.Models.TeamModels;
 using Microsoft.AspNetCore.Mvc;
-using Translator.Models;
-using Translator.Models.LiveTennis;
-using Translator.Models.TeamModels;
 using Translator.Services;
 using Translator.Storage;
 

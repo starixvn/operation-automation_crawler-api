@@ -1,6 +1,6 @@
+using Domain.Data;
+using Domain.Models.LiveTennis;
 using Microsoft.EntityFrameworkCore;
-using Tennis.Models.LiveTennis;
-using Tennis.Storage;
 using TennisWorker.Models;
 
 namespace TennisWorker.Services;

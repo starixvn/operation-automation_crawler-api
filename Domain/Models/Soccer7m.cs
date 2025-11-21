@@ -1,10 +1,10 @@
-﻿namespace Translator.Models;
+﻿namespace Domain.Models;
 public interface IHasEnglishName
 {
     string english_name { get; set; }
 }
 
-public class Soccer7m: IHasEnglishName
+public class Soccer7m : IHasEnglishName
 {
     public int id { get; set; }
 
@@ -16,7 +16,7 @@ public class Soccer7m: IHasEnglishName
 }
 
 
-public class Basketball7m: IHasEnglishName
+public class Basketball7m : IHasEnglishName
 {
     public int id { get; set; }
 

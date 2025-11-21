@@ -1,4 +1,4 @@
-namespace Tennis.Models.LiveTennis;
+namespace Domain.Models.LiveTennis;
 
 
 public class TennisLiveScore
