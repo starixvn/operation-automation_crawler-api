@@ -17,7 +17,8 @@ public static class ServiceCollectionExtensions
             options.UseMySql(
                 connectionString,
                 ServerVersion.AutoDetect(connectionString)
-            ).LogTo(Console.WriteLine, LogLevel.Information)
+            ).LogTo(Console.WriteLine, LogLevel.Information),
+            ServiceLifetime.Singleton
         );
         return services;
     }

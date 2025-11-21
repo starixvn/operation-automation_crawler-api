@@ -10,6 +10,7 @@
     <ProjectReference Include="..\Helper\Helper.csproj" />
     <ProjectReference Include="..\Tennis\Tennis.csproj" />
     <ProjectReference Include="..\Translator\Translator.csproj" />
+    <ProjectReference Include="..\TennisWorker\TennisWorker.csproj" />
         
   </ItemGroup>
 

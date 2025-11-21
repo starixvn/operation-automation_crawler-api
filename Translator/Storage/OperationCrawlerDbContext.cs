@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Translator.Models;
 using Translator.Models.LiveTennis;
+using Tennis.Models;
+using Tennis.Models.LiveTennis;
 
 namespace Translator.Storage;
 
@@ -18,6 +20,8 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
 
     public DbSet<CountryCode> CountryCodes { get; set; }
 
+    public DbSet<TennisLiveScore> TennisLiveScores { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -27,6 +31,7 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
         ConfigureBadminton(modelBuilder);
         ConfigureLiveTennis(modelBuilder);
         ConfigureCountryCode(modelBuilder);
+        ConfigureTennisLiveScore(modelBuilder);
     }
 
     private static void ConfigureSoccer7m(ModelBuilder modelBuilder)
@@ -71,5 +76,14 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
             .HasKey(c => c.Id);
 
         modelBuilder.Entity<CountryCode>().ToTable("country_code");
+    }
+
+    private static void ConfigureTennisLiveScore(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TennisLiveScore>()
+            .HasKey(s => s.Id);
+
+        modelBuilder.Entity<TennisLiveScore>().ToTable("tennis_live_scores");
+        modelBuilder.Entity<TennisLiveScore>().Property(s => s.created_date).HasDefaultValueSql("CURRENT_TIMESTAMP");
     }
 }

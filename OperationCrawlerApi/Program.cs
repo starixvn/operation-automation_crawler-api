@@ -6,6 +6,8 @@ using Tennis.Extensions;
 using Tennis.Storage;
 using Translator.Extensions;
 using Translator.Repositories;
+using TennisWorker.Services;
+using TennisLiveMatchesWorker = TennisWorker.TennisWorker;
 using Translator.Services;
 using Translator.Storage;
 
@@ -16,6 +18,11 @@ var configuration = builder.Configuration;
 
 services.AddHealthChecks();
 services.AddTransient<DataService>();
+services.AddSingleton<ILiveScoreRepository, LiveScoreRepository>();
+services.AddSingleton<IFetchScoreService, FetchScoreService>();
+services.AddSingleton<IScoreProcessing, ScoreProcessing>();
+services.AddHostedService<TennisLiveMatchesWorker>();
+services.AddHttpClient();
 
 // Register memory cache
 services.AddMemoryCache();
