@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<AtpTourCrawler>();
         services.AddTransient<TennisDataService>();
         services.AddTennisMySqlDatabase(configuration);
+        services.AddHostedService<CleanOldDataBackgroundService>();
 
         return services;
     }
