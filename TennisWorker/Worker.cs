@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Fanex.Logging;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TennisWorker.Services;
 
@@ -16,6 +17,7 @@ public class TennisWorker(IFetchScoreService fetchScoreService, IScoreProcessing
             try
             {
                 var events = await fetchScoreService.FetchATPTennisScoreAsync(stoppingToken);
+                //var itfEvents = await fetchScoreService.FetchITFTennisScoreAsync(stoppingToken);
                 var liveScores = events
                     .SelectMany(e =>
                     {
@@ -37,7 +39,7 @@ public class TennisWorker(IFetchScoreService fetchScoreService, IScoreProcessing
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error fetching or processing live matches from ATP API.");
+                await LogService.ErrorAsync("Error fetching or processing live matches from ATP API", ex);
             }
 
             await Task.Delay(refreshInterval, stoppingToken);

@@ -10,7 +10,7 @@ public class TennisDbContext(DbContextOptions<TennisDbContext> options) : DbCont
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<TennisLeague>().ToTable("tennis_leagues");
-        modelBuilder.Entity<TennisMatch>().ToTable("tennis_matches");
+        modelBuilder.Entity<TennisLeague>().ToTable("ATP_leagues");
+        modelBuilder.Entity<TennisMatch>().ToTable("ATP_matches");
     }
 }

@@ -20,7 +20,7 @@ public class TennisController(
     {
         var leagues = await atpTourCrawler.CrawlAll();
         await dataService.SyncLeagues(leagues);
-        // await triggerWorkflow.CallWorkFlowForATP(leagues);
+        await triggerWorkflow.CallWorkFlowForATP(leagues);
 
         return Ok(leagues);
     }

@@ -5,6 +5,7 @@ using Tennis.Extensions;
 using TennisWorker.Services;
 using Translator.Extensions;
 using Translator.Storage;
+using Fanex.Logging.Sentry.RavenClient;
 using TennisLiveMatchesWorker = TennisWorker.TennisWorker;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,7 @@ services.AddSingleton<IScoreProcessing, ScoreProcessing>();
 services.AddHostedService<TennisLiveMatchesWorker>();
 services.AddHttpClient();
 services.AddMySqlDatabase(configuration);
+services.AddFanexLogSentry(configuration);
 
 // Register memory cache
 services.AddMemoryCache();

@@ -59,8 +59,7 @@ public class LiveScoreRepository(OperationCrawlerDbContext dbContext) : ILiveSco
         match_id = score.MatchId ?? string.Empty,
         home_value = score.HomeValue,
         away_value = score.AwayValue,
-        set_number = score.SetNumber,
-        source = score.Source
+        set_number = score.SetNumber
     };
 }
 

@@ -1,6 +1,9 @@
 FROM hub.nexdev.net/base/dotnet/core/sdk:9.0-alpine AS builder
 
 WORKDIR /src
+COPY ./Domain/*.csproj ./Domain/
+COPY ./Helper/*.csproj ./Helper/
+COPY ./TennisWorker/*.csproj ./TennisWorker/
 COPY ./Tennis/*.csproj ./Tennis/
 COPY ./Translator/*.csproj ./Translator/
 COPY ./OperationCrawlerApi/*.csproj ./OperationCrawlerApi/
@@ -9,6 +12,8 @@ RUN dotnet nuget add source https://nuget.nexdev.net/api/v2
 RUN --mount=type=cache,target=/root/.nuget/packages \
 	dotnet restore -v n -r linux-x64 OperationCrawlerApi/OperationCrawlerApi.csproj
 
+COPY ./Domain/. ./Domain
+COPY ./TennisWorker/. ./TennisWorker
 COPY ./Helper/. ./Helper
 COPY ./Tennis/. ./Tennis
 COPY ./Translator/. ./Translator

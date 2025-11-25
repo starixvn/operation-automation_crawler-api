@@ -77,11 +77,6 @@ public class ScoreConverter
             return roundName;
         }
 
-        if (roundName.Contains("Robin"))
-        {
-            return "";
-        }
-
         var normalized = roundName.Trim();
         var roundOfMatch = Regex.Match(normalized, @"^round of\s+(\d+)", RegexOptions.IgnoreCase);
         if (roundOfMatch.Success)
@@ -89,10 +84,13 @@ public class ScoreConverter
             return $"R{roundOfMatch.Groups[1].Value}";
         }
 
-        var normalizedLower = normalized.ToLowerInvariant();
+        var normalizedLower = normalized;
 
         return normalizedLower switch
         {
+            "1st Round Qualifying" => "Q1",
+            "2nd Round Qualifying" => "Q2",
+            "3rd Round Qualifying" => "Q3",
             "Round Robin" => "RR",
             "Quarterfinals" => "QF",
             "Semifinals" => "SF",

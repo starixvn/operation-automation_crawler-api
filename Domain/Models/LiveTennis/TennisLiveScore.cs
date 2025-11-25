@@ -9,7 +9,5 @@ public class TennisLiveScore
     public string away_value { get; set; }
     public int set_number { get; set; }
 
-    public string source { get; set; }
-
     public DateTime created_date { get; set; }
 }

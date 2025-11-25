@@ -80,7 +80,7 @@ public class OperationCrawlerDbContext(DbContextOptions<OperationCrawlerDbContex
         modelBuilder.Entity<TennisLiveScore>()
             .HasKey(s => s.Id);
 
-        modelBuilder.Entity<TennisLiveScore>().ToTable("tennis_live_scores");
+        modelBuilder.Entity<TennisLiveScore>().ToTable("ATP_live_scores");
         modelBuilder.Entity<TennisLiveScore>().Property(s => s.created_date).HasDefaultValueSql("CURRENT_TIMESTAMP");
     }
 }
