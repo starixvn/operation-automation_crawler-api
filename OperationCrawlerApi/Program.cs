@@ -1,5 +1,6 @@
 using Domain;
 using Fanex.Caching.Redis;
+using ItfCrawler.Extensions;
 using Microsoft.OpenApi.Models;
 using Tennis.Extensions;
 using TennisWorker.Services;
@@ -22,6 +23,7 @@ services.AddHostedService<TennisLiveMatchesWorker>();
 services.AddHttpClient();
 services.AddMySqlDatabase(configuration);
 services.AddFanexLogSentry(configuration);
+services.AddItfService(configuration);
 
 // Register memory cache
 services.AddMemoryCache();

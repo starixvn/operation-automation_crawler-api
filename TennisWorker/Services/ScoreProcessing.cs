@@ -1,6 +1,7 @@
 using Helper;
 using TennisWorker.Models;
-using TennisWorker.Services;
+
+namespace TennisWorker.Services;
 
 public interface IScoreProcessing
 {

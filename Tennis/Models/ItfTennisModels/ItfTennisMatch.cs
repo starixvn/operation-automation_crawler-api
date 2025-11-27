@@ -6,7 +6,7 @@ public class ItfTennisPlayer
     public string givenName { get; set; }
     public bool hiddenPlayer { get; set; }
     public string nationality { get; set; }
-    public int? playerId { get; set; }
+    public int playerId { get; set; }
     public string profileLink { get; set; }
 }
 

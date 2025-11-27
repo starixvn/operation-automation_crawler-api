@@ -5,6 +5,7 @@ COPY ./Domain/*.csproj ./Domain/
 COPY ./Helper/*.csproj ./Helper/
 COPY ./TennisWorker/*.csproj ./TennisWorker/
 COPY ./Tennis/*.csproj ./Tennis/
+COPY ./ItfCrawler/*.csproj ./ItfCrawler/
 COPY ./Translator/*.csproj ./Translator/
 COPY ./OperationCrawlerApi/*.csproj ./OperationCrawlerApi/
 
@@ -17,6 +18,7 @@ COPY ./TennisWorker/. ./TennisWorker
 COPY ./Helper/. ./Helper
 COPY ./Tennis/. ./Tennis
 COPY ./Translator/. ./Translator
+COPY ./ItfCrawler/. ./ItfCrawler
 COPY ./OperationCrawlerApi/. ./OperationCrawlerApi
 
 WORKDIR /src/OperationCrawlerApi
