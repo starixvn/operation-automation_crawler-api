@@ -30,6 +30,10 @@ public class Match(string id)
 
     public string Round { get; set; }
 
+    public List<Player> HomePlayers { get; set; }
+
+    public List<Player> AwayPlayers { get; set; }
+
     public override bool Equals(object obj)
     {
         if (obj is Match other)

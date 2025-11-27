@@ -40,11 +40,14 @@ public class TennisDataService(TennisDbContext dbContext)
 
     private async Task SyncMatches(League league)
     {
-        var matches = league.Matches.Select(m => new TennisMatch
+        var validMatches = league.Matches.Where(r => r.HomePlayers.Count > 0 || r.AwayPlayers.Count > 0);
+        var matches = validMatches.Select(m => new TennisMatch
         {
             Id = $"ATP-{m.Id}",
-            Home = m.Home,
-            Away = m.Away,
+            HomeOne = m.HomePlayers[0].Id,
+            AwayOne = m.AwayPlayers[0].Id,
+            HomeTwo = m.HomePlayers.Count > 1 ? m.HomePlayers[1].Id : string.Empty,
+            AwayTwo = m.AwayPlayers.Count > 1 ? m.AwayPlayers[1].Id : string.Empty,
             UpdatedDate = DateTime.Now,
             KickoffTime = m.Date,
             LeagueId = $"ATP-{league.Id}"
@@ -65,8 +68,10 @@ public class TennisDataService(TennisDbContext dbContext)
         }
         else
         {
-            existingMatch.Home = match.Home;
-            existingMatch.Away = match.Away;
+            existingMatch.HomeOne = match.HomeOne;
+            existingMatch.AwayOne = match.AwayOne;
+            existingMatch.HomeTwo = match.HomeTwo;
+            existingMatch.AwayTwo = match.AwayTwo;
             existingMatch.KickoffTime = match.KickoffTime;
             existingMatch.LeagueId = match.LeagueId;
             existingMatch.UpdatedDate = DateTime.Now;

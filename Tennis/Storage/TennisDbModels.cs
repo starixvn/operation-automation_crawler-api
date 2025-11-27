@@ -30,21 +30,29 @@ public class TennisMatch
     [StringLength(100)]
     public string Id { get; set; } = string.Empty;
 
-    [Column("home")]
-    [StringLength(255)]
-    public string Home { get; set; } = string.Empty;
+    [Column("home_1_id")]
+    [StringLength(20)]
+    public string HomeOne { get; set; } = string.Empty;
 
-    [Column("away")]
-    [StringLength(255)]
-    public string Away { get; set; } = string.Empty;
+    [Column("home_2_id")]
+    [StringLength(20)]
+    public string HomeTwo { get; set; } = string.Empty;
+
+    [Column("away_1_id")]
+    [StringLength(20)]
+    public string AwayOne { get; set; } = string.Empty;
+
+    [Column("away_2_id")]
+    [StringLength(20)]
+    public string AwayTwo { get; set; } = string.Empty;
 
     [Column("league_id")]
     [StringLength(100)]
     public string LeagueId { get; set; } = string.Empty;
 
-    [Column("kickoff_time")] 
+    [Column("kickoff_time")]
     public DateTime KickoffTime { get; set; } = DateTime.MaxValue;
 
-    [Column("updated_date")] 
+    [Column("updated_date")]
     public DateTime UpdatedDate { get; set; } = DateTime.Now;
 }

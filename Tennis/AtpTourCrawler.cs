@@ -86,7 +86,7 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
                     Date = tournament.FormattedDate,
                     DateFrom = dateFrom,
                     DateTo = dateTo,
-                    Location = tournament.Location,
+                    Location = tournament.Location.Split(",").Length > 1 ? tournament.Location.Split(",")[1] : tournament.Location,
                     ScheduleUrl = $"https://www.atptour.com{tournament.ScheduleUrl}",
                     Group = group,
                     Players = playerNames
@@ -103,7 +103,7 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
         {
             return [];
         }
-        
+
         var days = await GetDaysOfLeague(league.ScheduleUrl);
         if (days.Count == 0)
         {
@@ -125,7 +125,7 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
     private async Task<List<Match>> GetMatches(League league, string day, string group)
     {
         var leagueUrl = league.ScheduleUrl;
-        
+
         if (!string.IsNullOrEmpty(day))
         {
             leagueUrl += $"?day={day}";
@@ -174,6 +174,8 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
                 Location = location,
                 Home = string.Join("/", homePlayers.Select(p => p.Name)),
                 Away = string.Join("/", awayPlayers.Select(p => p.Name)),
+                HomePlayers = homePlayers,
+                AwayPlayers = awayPlayers,
                 Source = leagueUrl,
                 Group = group,
                 Round = round

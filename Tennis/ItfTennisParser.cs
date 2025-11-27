@@ -81,9 +81,11 @@ public class ItfTennisParser(TimeIsCrawler timeIsCrawler)
             Location = "NA",
             Home = FormatPlayerNames(homePlayers, activeFlags),
             Away = FormatPlayerNames(awayPlayers, activeFlags),
+            HomePlayers = homePlayers,
+            AwayPlayers = awayPlayers,
             Source = leagueUrl,
             MatchType = match.eventDesc,
-            Round = match.roundGroupDesc
+            Round = match.roundGroupDesc,
         };
 
         var timeIsModel = await timeIsCrawler.GetTimeIsModel(league.venue.Trim());
