@@ -170,7 +170,7 @@ public class AtpTourCrawler(DynamicCaching cache, TimeIsCrawler timeIsCrawler)
                 UtcCity = timeIsModel?.Location ?? "",
                 City = league.Location,
                 Country = league.Country,
-                Date = matchDate.AddHours(8),
+                Date = matchDate.AddHours(-timeIsModel.UtcOffset + 8),
                 Location = location,
                 Home = string.Join("/", homePlayers.Select(p => p.Name)),
                 Away = string.Join("/", awayPlayers.Select(p => p.Name)),
