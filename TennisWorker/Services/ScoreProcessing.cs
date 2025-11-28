@@ -48,7 +48,9 @@ public class ScoreProcessing(ILiveScoreRepository liveScoreRepository, DynamicCa
             return cachedScore;
         }
         var scores = await liveScoreRepository.GetByMatchAsync(matchId, cancellationToken);
-        return scores.ToList();
+        var listScore = scores.ToList();
+        cache.SetValue<List<LiveScore>>(cacheKey, listScore, CacheDuration);
+        return listScore;
     }
 
     private static string BuildCacheKey(string matchId) => $"{CacheKeyPrefix}:{matchId}";
